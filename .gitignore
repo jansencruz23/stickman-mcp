@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+
+# Pipeline outputs (one folder per Run)
+projects/
+
+# One-off style/voice tuning outputs
+tuning/
+
+# User-curated music tracks (keep the folder)
+music/*
+!music/.gitkeep
