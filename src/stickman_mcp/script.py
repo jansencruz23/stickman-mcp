@@ -54,6 +54,17 @@ def script_to_dict(script: Script) -> dict[str, Any]:
     }
 
 
+def with_image_prompt(script: Script, scene_id: int, image_prompt: str) -> Script:
+    """Replace one Scene's Image Prompt; callers save the result, keeping the Script the source of truth."""
+    replacement = image_prompt.strip()
+    if not replacement:
+        raise ScriptError(f"scene {scene_id}.image_prompt must be a non-empty string.")
+    scenes = tuple(
+        Scene(scene.id, scene.narration, replacement) if scene.id == scene_id else scene for scene in script.scenes
+    )
+    return Script(script.topic, script.title, scenes, script.visual_bible)
+
+
 def narration_changed(previous: Script, current: Script) -> bool:
     return [scene.narration for scene in previous.scenes] != [scene.narration for scene in current.scenes]
 

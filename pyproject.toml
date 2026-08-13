@@ -3,11 +3,18 @@ name = "stickman-mcp"
 version = "0.1.0"
 description = "Local MCP server that turns a topic into a narrated stickman explainer video"
 requires-python = ">=3.11"
+# diffusers leaves peft (fusing the Lightning LoRA) and accelerate (loading SDXL without
+# spiking host RAM) optional, so both are declared here: the image backend needs them.
 dependencies = [
+    "accelerate>=1.0.0",
+    "diffusers>=0.31.0",
+    "huggingface-hub>=0.26.0",
     "kokoro>=0.9.4",
     "mcp>=2.0.0",
     "numpy>=2.0.0",
+    "peft>=0.13.0",
     "torch>=2.5.0",
+    "transformers>=4.44.0",
 ]
 
 [project.scripts]

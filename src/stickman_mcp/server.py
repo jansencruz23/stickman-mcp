@@ -10,9 +10,19 @@ from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
 from .config import ChannelConfig, load_channel_config
+from .illustration import generate_images, redraw_scene, redraw_seed
+from .images import ImageBackend, ImageError, SDXLLightningBackend
+from .jobs import RUNNING, Job
 from .narration import synthesize
 from .runs import RunStore
-from .script import Script, ScriptError, image_prompts_changed, narration_changed, parse_script
+from .script import (
+    Script,
+    ScriptError,
+    image_prompts_changed,
+    narration_changed,
+    parse_script,
+    with_image_prompt,
+)
 from .tts import KokoroEngine, TTSEngine, TTSError
 
 server = MCPServer("stickman_mcp", version="0.1.0")
@@ -28,8 +38,18 @@ def tts_engine() -> TTSEngine:
     return KokoroEngine()
 
 
+@lru_cache(maxsize=1)
+def image_backend() -> ImageBackend:
+    config = channel_config()
+    return SDXLLightningBackend(config.image_width, config.image_height, config.image_steps, config.guidance_scale)
+
+
 def _runs() -> RunStore:
     return RunStore(channel_config().projects_dir)
+
+
+def _job(runs: RunStore, run_id: str) -> Job:
+    return Job(runs.job_path(run_id))
 
 
 def _ok(payload: dict[str, Any]) -> str:
@@ -40,12 +60,29 @@ def _error(message: str) -> str:
     return f"Error: {message}"
 
 
+class ToolError(Exception):
+    """A guard failed; the message is the Error: string the tool hands back."""
+
+
 def _unknown_run(run_id: str) -> str:
     return _error(f"no Run named '{run_id}'. Call stickman_create_run to start one.")
 
 
 def _unreadable_script(run_id: str, exc: ScriptError) -> str:
     return _error(f"the saved script for '{run_id}' is unreadable: {exc} Call stickman_save_script to replace it.")
+
+
+def _script_for(runs: RunStore, run_id: str, doing: str) -> Script:
+    """The guard every tool that reads a Script shares: known Run, readable Script, Script present."""
+    if not runs.exists(run_id):
+        raise ToolError(_unknown_run(run_id))
+    try:
+        script = runs.load_script(run_id)
+    except ScriptError as exc:
+        raise ToolError(_unreadable_script(run_id, exc)) from None
+    if script is None:
+        raise ToolError(_error(f"Run '{run_id}' has no Script to {doing}. Call stickman_save_script first."))
+    return script
 
 
 @server.tool(
@@ -135,16 +172,21 @@ def stickman_get_run(run_id: str) -> str:
 
     Returns:
         JSON: {"run_id": str, "path": str, "has_script": bool, "scene_count": int,
-        "narration_clips": int, "images": int, "video_rendered": bool}.
+        "narration_clips": int, "images": int, "video_rendered": bool}, plus "job" holding
+        the current or last background job when one has run (see stickman_job_status).
         On failure an "Error: ..." string naming the tool that fixes it.
     """
     runs = _runs()
     if not runs.exists(run_id):
         return _unknown_run(run_id)
     try:
-        return _ok(runs.status(run_id))
+        status = runs.status(run_id)
     except ScriptError as exc:
         return _unreadable_script(run_id, exc)
+    job = _job(runs, run_id).status()
+    if job is not None:
+        status["job"] = job
+    return _ok(status)
 
 
 @server.tool(
@@ -166,14 +208,10 @@ def stickman_synthesize_narration(run_id: str) -> str:
         On failure an "Error: ..." string naming the tool that fixes it.
     """
     runs = _runs()
-    if not runs.exists(run_id):
-        return _unknown_run(run_id)
     try:
-        script = runs.load_script(run_id)
-    except ScriptError as exc:
-        return _unreadable_script(run_id, exc)
-    if script is None:
-        return _error(f"Run '{run_id}' has no Script to narrate. Call stickman_save_script first.")
+        script = _script_for(runs, run_id, "narrate")
+    except ToolError as exc:
+        return str(exc)
     try:
         clips = synthesize(runs, run_id, script, tts_engine(), channel_config().voice)
     except TTSError as exc:
@@ -187,6 +225,145 @@ def stickman_synthesize_narration(run_id: str) -> str:
             "synthesized": sum(1 for clip in clips if clip.synthesized),
             "skipped": sum(1 for clip in clips if not clip.synthesized),
         }
+    )
+
+
+@server.tool(
+    name="stickman_generate_images",
+    annotations=ToolAnnotations(title="Generate Images", read_only_hint=False, idempotent_hint=False),
+)
+def stickman_generate_images(run_id: str, only_missing: bool = False) -> str:
+    """Start a background job drawing one still image per Scene; returns at once, so poll for progress.
+
+    The channel Style Prefix and negative prompt are applied here, so Image Prompts describe scene
+    content only. Seeds are the channel base seed plus the Scene id, so re-running repeats the batch.
+
+    Args:
+        run_id: The Run returned by stickman_create_run, with a Script already saved.
+        only_missing: Draw only Scenes with no image yet; use this to finish a job that stopped.
+
+    Returns:
+        JSON: {"run_id": str, "job": "images", "state": "running", "done": 0, "total": int,
+        "resume": str}. Poll stickman_job_status until state is done, then show the folder at
+        the Image Review Checkpoint. On failure an "Error: ..." string naming the tool that
+        fixes it.
+    """
+    runs = _runs()
+    try:
+        script = _script_for(runs, run_id, "illustrate")
+    except ToolError as exc:
+        return str(exc)
+    job = _job(runs, run_id)
+    running = _already_running(job, run_id)
+    if running:
+        return running
+    config, backend = channel_config(), image_backend()
+    started = job.start(
+        "images",
+        len(script.scenes),
+        lambda: generate_images(runs, run_id, script, backend, config, only_missing),
+        resume="Call stickman_generate_images with only_missing set to draw the Scenes it did not reach.",
+    )
+    return _ok({"run_id": run_id, **started})
+
+
+@server.tool(
+    name="stickman_job_status",
+    annotations=ToolAnnotations(title="Job Status", read_only_hint=True, idempotent_hint=True),
+)
+def stickman_job_status(run_id: str) -> str:
+    """Report the Run's current or last background job. Poll this while a job runs.
+
+    Args:
+        run_id: The Run whose job to report.
+
+    Returns:
+        JSON: {"run_id": str, "job": str, "state": "running"|"done"|"error", "done": int,
+        "total": int, "resume": str}, plus "error" with the failure message when state is
+        error. done counts Scenes finished, including any skipped as already drawn.
+        On failure an "Error: ..." string naming the tool that fixes it.
+    """
+    runs = _runs()
+    if not runs.exists(run_id):
+        return _unknown_run(run_id)
+    status = _job(runs, run_id).status()
+    if status is None:
+        return _error(f"no background job has run for '{run_id}'. Call stickman_generate_images to start one.")
+    return _ok({"run_id": run_id, **status})
+
+
+@server.tool(
+    name="stickman_regenerate_image",
+    annotations=ToolAnnotations(title="Regenerate Image", read_only_hint=False, idempotent_hint=False),
+)
+def stickman_regenerate_image(
+    run_id: str, scene_id: int, image_prompt: str | None = None, seed: int | None = None
+) -> str:
+    """Redraw one Scene's image, replacing the file. Fast enough to call while the creator watches.
+
+    Use at the Image Review Checkpoint. With no image_prompt and no seed this rerolls: same prompt,
+    a new random seed, so the picture changes. A new image_prompt is saved into the Script before
+    drawing, because the Script is the single source of truth for what a Scene shows.
+
+    Args:
+        run_id: The Run returned by stickman_create_run.
+        scene_id: Which Scene to redraw, from 1 to the Script's scene count.
+        image_prompt: Replacement scene content, when the picture is wrong rather than unlucky.
+            Describe scene content only; the channel Style Prefix is applied by the server.
+        seed: Reuse a specific seed to reproduce an image; omit it to reroll.
+
+    Returns:
+        JSON: {"run_id": str, "scene_id": int, "seed": int, "image": str, "image_prompt": str,
+        "script_updated": bool}.
+        On failure an "Error: ..." string naming the tool that fixes it.
+    """
+    runs = _runs()
+    try:
+        script = _script_for(runs, run_id, "illustrate")
+    except ToolError as exc:
+        return str(exc)
+    if not 1 <= scene_id <= len(script.scenes):
+        return _error(
+            f"Run '{run_id}' has no Scene {scene_id}; its Script has Scenes 1 to {len(script.scenes)}. "
+            "Call stickman_get_run to check the scene count, or stickman_save_script to change the Script."
+        )
+    job = _job(runs, run_id)
+    running = _already_running(job, run_id)
+    if running:
+        return running
+    if image_prompt is not None:
+        try:
+            script = with_image_prompt(script, scene_id, image_prompt)
+        except ScriptError as exc:
+            return _error(f"{exc} Nothing was written; call stickman_regenerate_image with a prompt.")
+        runs.save_script(run_id, script)  # saved before drawing, so the file always explains the image
+    config = channel_config()
+    scene = script.scenes[scene_id - 1]
+    chosen = redraw_seed(config, scene_id, seed)
+    try:
+        destination = redraw_scene(runs, run_id, scene, image_backend(), config, chosen)
+    except ImageError as exc:
+        return _error(f"{exc}. The Script keeps the Image Prompt; call stickman_regenerate_image to try again.")
+    return _ok(
+        {
+            "run_id": run_id,
+            "scene_id": scene_id,
+            "seed": chosen,
+            "image": str(destination),
+            "image_prompt": scene.image_prompt,
+            "script_updated": image_prompt is not None,
+        }
+    )
+
+
+def _already_running(job: Job, run_id: str) -> str | None:
+    """One job per Run: two jobs would write the same files and race over the GPU."""
+    current = job.status()
+    if current is None or current["state"] != RUNNING:
+        return None
+    return _error(
+        f"a {current['job']} job is already running for '{run_id}' "
+        f"({current['done']} of {current['total']} done). Call stickman_job_status to follow it."
     )
 
 

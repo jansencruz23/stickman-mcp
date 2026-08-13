@@ -13,6 +13,7 @@ from .script import Script, ScriptError, parse_script, script_to_dict
 AUDIO_DIR = "audio"
 IMAGES_DIR = "images"
 SCRIPT_FILE = "script.json"
+JOB_FILE = "job.json"
 VIDEO_FILE = "video.mp4"
 MAX_SLUG_LENGTH = 48
 
@@ -50,8 +51,14 @@ class RunStore:
     def narration_clip_count(self, run_id: str) -> int:
         return len(list((self.path(run_id) / AUDIO_DIR).glob("*.wav")))
 
+    def image_path(self, run_id: str, scene_id: int) -> Path:
+        return self.path(run_id) / IMAGES_DIR / f"{scene_id:03d}.png"
+
     def image_count(self, run_id: str) -> int:
         return len(list((self.path(run_id) / IMAGES_DIR).glob("*.png")))
+
+    def job_path(self, run_id: str) -> Path:
+        return self.path(run_id) / JOB_FILE
 
     def load_script(self, run_id: str) -> Script | None:
         source = self.path(run_id) / SCRIPT_FILE

@@ -15,9 +15,10 @@ and the tool behaviour that exists today. Developer-facing notes live in
 uv sync
 ```
 
-That installs everything, including a CUDA build of torch (~2.5 GB) and Kokoro. Model
-weights are **not** bundled — the first narration downloads Kokoro-82M (~330 MB) into the
-Hugging Face cache. Later tickets add SDXL (~7 GB).
+That installs everything, including a CUDA build of torch (~2.5 GB), Kokoro and diffusers.
+Model weights are **not** bundled — the first narration downloads Kokoro-82M (~330 MB) and
+the first image downloads SDXL base plus the Lightning LoRA (~7 GB) into the Hugging Face
+cache.
 
 Confirm the install with the opt-in engine smoke test, which is excluded from the normal
 suite:
@@ -101,3 +102,45 @@ whether the video lands in the target 5-10 minute range:
 
 A Scene's duration *is* its Narration Clip's length ([ADR-0001](docs/adr/0001-scene-first-scripts-no-timestamper.md)).
 Nothing in this pipeline transcribes audio to recover timing.
+
+## Illustrating a Run: a background job you poll
+
+`stickman_generate_images` returns immediately — it starts a job and hands back the Scene
+count. No timeout to worry about, unlike narration:
+
+```json
+{"run_id": "2026-08-13-how-compound-interest-works", "job": "images", "state": "running", "done": 0, "total": 40}
+```
+
+Poll `stickman_job_status` with the same run id until `state` is `done` (or `error`, which
+carries the failure message). One job per Run at a time; asking for a second while one runs
+returns an `Error:` pointing you back at the status tool.
+
+On an RTX 3060 the first call spends about **40 seconds** loading SDXL, then roughly
+**2 seconds per Scene** at 4 steps and 1344x768 — a 40-Scene batch lands in about two
+minutes. The model stays loaded for the rest of the session, so a single
+`stickman_regenerate_image` comes back in about **7 seconds**.
+
+If a job stops halfway — a crash, a restart, an out-of-memory — call
+`stickman_generate_images` again with `only_missing: true` and it draws just the Scenes
+without an image. Finished images are never redrawn.
+
+### The style is applied for you
+
+Scene Image Prompts describe **content only**. The server prepends the channel Style Prefix
+from `channel.toml` and applies the negative prompt to every image, so every frame in every
+video shares one look. Seeds are `base_seed + scene_id`, so re-running a batch reproduces
+the same pictures.
+
+### Fixing one Scene at the Image Review Checkpoint
+
+Images land in the Run's `images/` folder as `001.png`, `002.png`, ... — open the folder and
+look. For a Scene that came out badly, `stickman_regenerate_image` redraws just that one:
+
+- **`stickman_regenerate_image(run_id, 7)`** — same prompt, new random seed. Use when the
+  picture is unlucky rather than wrong. It never repeats the batch seed, so the image always
+  changes.
+- **`stickman_regenerate_image(run_id, 7, image_prompt="...")`** — new scene content. The
+  prompt is written into `script.json` *before* the image is drawn, so the saved Script
+  always explains the picture next to it.
+- **`stickman_regenerate_image(run_id, 7, seed=...)`** — reproduce a specific image exactly.
