@@ -44,6 +44,9 @@ class RunStore:
             "video_rendered": (self.path(run_id) / VIDEO_FILE).is_file(),
         }
 
+    def narration_clip_path(self, run_id: str, scene_id: int) -> Path:
+        return self.path(run_id) / AUDIO_DIR / f"{scene_id:03d}.wav"
+
     def narration_clip_count(self, run_id: str) -> int:
         return len(list((self.path(run_id) / AUDIO_DIR).glob("*.wav")))
 

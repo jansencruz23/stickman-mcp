@@ -10,8 +10,10 @@ from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
 from .config import ChannelConfig, load_channel_config
+from .narration import synthesize
 from .runs import RunStore
 from .script import Script, ScriptError, image_prompts_changed, narration_changed, parse_script
+from .tts import KokoroEngine, TTSEngine, TTSError
 
 server = MCPServer("stickman_mcp", version="0.1.0")
 
@@ -19,6 +21,11 @@ server = MCPServer("stickman_mcp", version="0.1.0")
 @lru_cache(maxsize=1)
 def channel_config() -> ChannelConfig:
     return load_channel_config()
+
+
+@lru_cache(maxsize=1)
+def tts_engine() -> TTSEngine:
+    return KokoroEngine()
 
 
 def _runs() -> RunStore:
@@ -35,6 +42,10 @@ def _error(message: str) -> str:
 
 def _unknown_run(run_id: str) -> str:
     return _error(f"no Run named '{run_id}'. Call stickman_create_run to start one.")
+
+
+def _unreadable_script(run_id: str, exc: ScriptError) -> str:
+    return _error(f"the saved script for '{run_id}' is unreadable: {exc} Call stickman_save_script to replace it.")
 
 
 @server.tool(
@@ -133,7 +144,50 @@ def stickman_get_run(run_id: str) -> str:
     try:
         return _ok(runs.status(run_id))
     except ScriptError as exc:
-        return _error(f"the saved script for '{run_id}' is unreadable: {exc} Call stickman_save_script to replace it.")
+        return _unreadable_script(run_id, exc)
+
+
+@server.tool(
+    name="stickman_synthesize_narration",
+    annotations=ToolAnnotations(title="Synthesize Narration", read_only_hint=False, idempotent_hint=True),
+)
+def stickman_synthesize_narration(run_id: str) -> str:
+    """Speak every Scene's Narration into a Narration Clip; a clip's length is its Scene's duration.
+
+    A full Script takes minutes, so raise the client tool timeout (see README). Scenes that
+    already have a clip are skipped, so calling again after a timeout finishes only the rest.
+
+    Args:
+        run_id: The Run returned by stickman_create_run, with a Script already saved.
+
+    Returns:
+        JSON: {"run_id": str, "scenes": [{"id": int, "duration_seconds": float}],
+        "total_duration_seconds": float, "synthesized": int, "skipped": int}.
+        On failure an "Error: ..." string naming the tool that fixes it.
+    """
+    runs = _runs()
+    if not runs.exists(run_id):
+        return _unknown_run(run_id)
+    try:
+        script = runs.load_script(run_id)
+    except ScriptError as exc:
+        return _unreadable_script(run_id, exc)
+    if script is None:
+        return _error(f"Run '{run_id}' has no Script to narrate. Call stickman_save_script first.")
+    try:
+        clips = synthesize(runs, run_id, script, tts_engine(), channel_config().voice)
+    except TTSError as exc:
+        return _error(f"narration stopped: {exc} Clips already finished are kept.")
+    scenes = [{"id": clip.scene_id, "duration_seconds": round(clip.duration_seconds, 3)} for clip in clips]
+    return _ok(
+        {
+            "run_id": run_id,
+            "scenes": scenes,
+            "total_duration_seconds": round(sum(scene["duration_seconds"] for scene in scenes), 3),
+            "synthesized": sum(1 for clip in clips if clip.synthesized),
+            "skipped": sum(1 for clip in clips if not clip.synthesized),
+        }
+    )
 
 
 def main() -> None:
