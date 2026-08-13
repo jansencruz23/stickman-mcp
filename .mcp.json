@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "stickman_mcp": {
+      "command": "uv",
+      "args": ["run", "--frozen", "stickman-mcp"]
+    }
+  }
+}

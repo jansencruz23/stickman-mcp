@@ -1,0 +1,45 @@
+[project]
+name = "stickman-mcp"
+version = "0.1.0"
+description = "Local MCP server that turns a topic into a narrated stickman explainer video"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=2.0.0",
+    "torch>=2.5.0",
+]
+
+[project.scripts]
+stickman-mcp = "stickman_mcp.server:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "mypy>=1.13.0",
+    "anyio>=4.14.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/stickman_mcp"]
+
+# torch ships CUDA builds only from PyTorch's own index; cu124 matches this machine.
+[tool.uv.sources]
+torch = { index = "pytorch-cu124" }
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not smoke'"
+markers = ["smoke: opt-in tests that load real engines (GPU time and model downloads)"]
+
+[tool.mypy]
+files = ["src", "tests"]
+python_version = "3.11"
+ignore_missing_imports = true

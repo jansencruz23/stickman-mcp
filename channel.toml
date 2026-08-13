@@ -1,0 +1,33 @@
+# Channel-wide production settings, locked once and reused by every Run.
+# Tuning the style prefix and voice is a one-off setup session, not a per-video decision.
+# Relative paths resolve against this file's directory.
+
+[paths]
+projects_dir = "projects"
+music_dir = "music"
+
+[style]
+# Prepended to every Image Prompt by the server; Claude's prompts describe scene content only.
+prefix = "minimalist black and white stickman drawing, thick clean ink lines, plain white background, simple flat vector illustration,"
+negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signature, blurry, extra limbs, cluttered background, color"
+
+[voice]
+name = "af_heart"
+
+[render]
+width = 1920
+height = 1080
+fps = 30
+# Silent pause held between Scenes, in both the audio track and the image timing.
+scene_gap_seconds = 0.4
+# Music bed level relative to the narration.
+music_level_db = -22.0
+
+[image]
+# Near-16:9 generation size, upscaled and padded to the render resolution.
+width = 1344
+height = 768
+steps = 4
+guidance_scale = 1.0
+# Per-Scene seeds are base_seed + scene id, so a batch is reproducible.
+base_seed = 20260813
