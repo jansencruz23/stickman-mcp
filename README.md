@@ -5,11 +5,13 @@ driven from a Claude Code conversation in this repo. Claude writes the Script; t
 the mechanical work — text-to-speech, image generation, and video assembly. Everything runs
 on your own machine: no API keys, no per-video cost.
 
-The full `/produce-video` walkthrough is ticket 05's deliverable. What follows is the setup
-and the tool behaviour that exists today. Developer-facing notes live in
-[docs/developing.md](docs/developing.md).
+Developer-facing notes live in [docs/developing.md](docs/developing.md).
 
 ## One-time setup
+
+Run these in order on a fresh checkout. The last step proves the whole thing works.
+
+### 1. Python and the server
 
 ```powershell
 uv sync
@@ -18,7 +20,19 @@ uv sync
 That installs everything Python, including a CUDA build of torch (~2.5 GB), Kokoro and
 diffusers. Model weights are **not** bundled — the first narration downloads Kokoro-82M
 (~330 MB) and the first image downloads SDXL base plus the Lightning LoRA (~7 GB) into the
-Hugging Face cache.
+Hugging Face cache. Both happen on first real use, not now.
+
+One more download hides there: Kokoro's English front-end loads the spaCy model
+`en_core_web_sm` (~12 MB) and fetches it itself if it is absent. It is not a declared
+dependency, so **`uv sync` uninstalls it every time** and the next narration re-downloads it.
+Harmless, but it means the first narration after any `uv sync` needs the network. To settle it
+now, or to work offline:
+
+```powershell
+uv run python -m spacy download en_core_web_sm
+```
+
+### 2. ffmpeg
 
 **ffmpeg is a separate install and must be on PATH.** No Python package can carry it, and
 video assembly shells out to `ffmpeg` and `ffprobe` directly:
@@ -28,38 +42,31 @@ winget install --id Gyan.FFmpeg -e
 ffmpeg -version        # confirm PATH picked it up; restart the shell if not
 ```
 
-Confirm the install with the opt-in engine smoke test, which is excluded from the normal
-suite:
-
-```powershell
-uv run pytest -m smoke
-```
-
-### espeak-ng
+### 3. espeak-ng, only if the smoke test says so
 
 Kokoro phonemises English through espeak-ng. `uv sync` pulls in `espeakng-loader`, which
 **bundles the library and its data**, so a separate install is not normally required —
 `misaki` points phonemizer at the bundled copy on import.
 
-If the bundled library fails to load on your machine, install espeak-ng and point
-phonemizer at it:
+Confirm with the opt-in engine test, which is excluded from the normal suite and downloads
+the models:
+
+```powershell
+uv run pytest -m smoke
+```
+
+If it fails to load the library, install espeak-ng and point phonemizer at it:
 
 ```powershell
 winget install --id eSpeak-NG.eSpeak-NG -e
 $env:PHONEMIZER_ESPEAK_LIBRARY = "C:\Program Files\eSpeak NG\libespeak-ng.dll"
 ```
 
-The smoke test above is what tells you which situation you are in.
+### 4. Raise the MCP tool timeout
 
-## Narrating a Run: the one long call
-
-`stickman_synthesize_narration` speaks every Scene in one synchronous call. On an RTX 3060
-it runs at roughly **14.5 seconds per Scene**, plus about 30 seconds to load the model on
-the first call — so a full 30-45 Scene Script takes **8-12 minutes**.
-
-### Raise the tool timeout
-
-`.mcp.json` sets a per-server `timeout` of 30 minutes for exactly this call:
+`.mcp.json` registers the server project-scoped and sets a per-server `timeout` of 30
+minutes. That is already committed here, but it is the one setting a different machine or a
+different client will get wrong:
 
 ```json
 {
@@ -73,14 +80,94 @@ the first call — so a full 30-45 Scene Script takes **8-12 minutes**.
 }
 ```
 
-That number is a hard wall-clock limit per tool call in milliseconds, and it also raises the
-floor on Claude Code's idle timeout — which otherwise aborts a stdio server's tool call after
-30 minutes of silence, and this call is silent by design. Claude Code moves any call still
-running after two minutes into a background task, so the session stays usable while narration
-runs.
+`stickman_synthesize_narration` speaks every Scene in one synchronous call — 8-12 minutes for
+a full Script (see [below](#narrating-a-run-the-one-long-call)) — and the default tool timeout
+in most MCP clients is 30 seconds. The number above is a hard wall-clock limit per tool call in
+milliseconds, and it also raises the floor on Claude Code's idle timeout, which otherwise
+aborts a stdio server's tool call after 30 minutes of silence. This call is silent by design.
+Claude Code moves any call still running after two minutes into a background task, so the
+session stays usable while narration runs.
 
-Using a different MCP client? Set its tool timeout to at least 30 minutes; several clients
-still default to 30 seconds.
+Using a different MCP client? Set its tool timeout to at least 30 minutes.
+
+### 5. Music folder
+
+Background music is optional, and only ever comes from tracks **you** put in `music/` — which
+is what keeps a monetized video clear of Content ID. The YouTube Audio Library is the easy
+source. The folder is gitignored apart from its `.gitkeep`; drop `.mp3`/`.wav` files in and
+they appear in `stickman_list_music()`.
+
+### 6. Check it end to end
+
+Restart Claude Code so it picks up `.mcp.json`, then in a conversation in this repo:
+
+```
+stickman_create_run("setup check")
+stickman_get_run("<the run_id it returned>")
+```
+
+`stickman_get_run` reporting `has_script: false` and zero everything is the setup working —
+the server started, loaded `channel.toml`, and created a folder under `projects/`. Delete that
+folder afterwards.
+
+## Producing a video
+
+Say what you want:
+
+```
+produce a video about how compound interest works
+```
+
+That fires the [`/produce-video`](.claude/skills/produce-video/SKILL.md) skill, which writes a
+Script, pauses at the **Script Approval** Checkpoint, narrates, warns if the video would land
+outside 4.5-10.5 minutes, illustrates, pauses at the **Image Review** Checkpoint, renders, and
+saves upload metadata. Each Run gets its own folder under `projects/`, holding `script.json`,
+`audio/`, `images/`, `video.mp4`, `subtitles.srt` and `metadata.txt`.
+
+Modifiers the skill listens for in that first message:
+
+| Say | Effect |
+| --- | --- |
+| `yolo` | Yolo Mode: no Checkpoints, no questions, straight through to the Video Package |
+| `12 scenes only` | Overrides the default 30-45 Scenes |
+| `no music` / `music calm-piano.mp3` | Skips or picks the bed, instead of being asked |
+
+A full-length video is roughly 15 minutes of machine time: 8-12 of narration, ~2 of images, and
+under a minute to render.
+
+The rest of this file documents what each tool does, for when a Run needs driving by hand.
+
+## Starting a Run and saving its Script
+
+`stickman_create_run(topic)` makes the folder and returns the run id every later call takes.
+`stickman_save_script(run_id, script)` then validates and persists the Scenes everything else
+derives from:
+
+```json
+{
+  "topic": "How compound interest works",
+  "title": "Why Saving Early Beats Saving More",
+  "visual_bible": {"Ana": "stickman with a short ponytail and a backpack"},
+  "scenes": [
+    {"id": 1, "narration": "Two friends save the same amount...", "image_prompt": "Ana stands beside a small coin jar"}
+  ]
+}
+```
+
+Scene ids run sequentially from 1. `visual_bible` is optional; entries are yours to repeat
+verbatim in the prompts that mention them, since the server does not expand them. Image prompts
+describe content only — see [the style is applied for you](#the-style-is-applied-for-you).
+
+A failed validation returns an `Error:` naming the problem and writes nothing. A save that
+invalidates work already on disk returns a `warning` listing what went stale and which tool
+regenerates it — delete those files first, because those tools skip Scenes that already have
+assets.
+
+## Narrating a Run: the one long call
+
+On an RTX 3060 `stickman_synthesize_narration` runs at roughly **14.5 seconds per Scene**, plus
+about 30 seconds to load the model on the first call — so a full 30-45 Scene Script takes
+**8-12 minutes**. Raise the tool timeout before the first real Run (setup step 4).
 
 ### A timeout is not a lost Run
 
@@ -175,10 +262,6 @@ that would produce a broken video.
 
 ### Background music
 
-Music comes only from the folder in `channel.toml` (`paths.music_dir`, `music/` by default) —
-tracks **you** put there, which is what keeps a monetized video clear of Content ID. The
-YouTube Audio Library is the easy source.
-
 ```
 stickman_list_music()                                  -> {"music_dir": "...", "tracks": ["calm-piano.mp3"]}
 stickman_render_video(run_id, music_track="calm-piano.mp3")
@@ -197,3 +280,17 @@ synthetic content box on upload as well.
 
 `stickman_get_run` reports the package as it fills in: `video_rendered`, `subtitles` and
 `metadata` are all derived from the files on disk, like every other field.
+
+## Tuning the channel
+
+`channel.toml` holds everything that is a channel-wide decision rather than a per-video one —
+the Style Prefix every image inherits, the narration voice, the inter-Scene gap, the music
+level, and the render and sampler settings. Every knob is commented in the file.
+
+The Style Prefix and the voice are meant to be chosen once from real outputs — a grid of candidate
+styles against the same prompts, and one sample line read in each candidate voice — rather than by
+editing strings and hoping. **That session has not happened yet: the committed prefix and voice are
+placeholders**, so the look of anything you generate today is provisional.
+
+Two knobs worth knowing before then: `render.music_level_db` if the bed sits too loud or too
+quiet under the speech, and `render.scene_gap_seconds` if the cuts feel rushed.

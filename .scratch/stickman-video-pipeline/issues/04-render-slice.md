@@ -18,7 +18,7 @@ Spec: `.scratch/stickman-video-pipeline/spec.md`
 - [x] Rendering with a missing Scene image or clip returns/records an actionable error naming the Scene and the remedy tool — it does not produce a broken video.
 - [x] Non-16:9 source images are letterboxed/padded, never stretched (probe the output dimensions on a deliberately square fixture).
 - [x] `stickman_save_metadata` writes a file containing the title, description, and comma-joined tags, readable back; `stickman_get_run` reflects its presence.
-- [ ] Human check: the MP4 plays in a normal player with narration audible and image cuts landing at narration boundaries.
+- [x] Human check: the MP4 plays in a normal player with narration audible and image cuts landing at narration boundaries. *(confirmed by Jansen 2026-08-16, at the start of ticket 05)*
 
 ## Comments
 
