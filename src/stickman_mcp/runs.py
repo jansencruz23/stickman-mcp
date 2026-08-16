@@ -15,6 +15,9 @@ IMAGES_DIR = "images"
 SCRIPT_FILE = "script.json"
 JOB_FILE = "job.json"
 VIDEO_FILE = "video.mp4"
+SUBTITLES_FILE = "subtitles.srt"
+NARRATION_FILE = "narration.wav"
+METADATA_FILE = "metadata.txt"
 MAX_SLUG_LENGTH = 48
 
 
@@ -42,7 +45,9 @@ class RunStore:
             "scene_count": len(script.scenes) if script else 0,
             "narration_clips": self.narration_clip_count(run_id),
             "images": self.image_count(run_id),
-            "video_rendered": (self.path(run_id) / VIDEO_FILE).is_file(),
+            "video_rendered": self.video_path(run_id).is_file(),
+            "subtitles": self.subtitles_path(run_id).is_file(),
+            "metadata": self.metadata_path(run_id).is_file(),
         }
 
     def narration_clip_path(self, run_id: str, scene_id: int) -> Path:
@@ -59,6 +64,25 @@ class RunStore:
 
     def job_path(self, run_id: str) -> Path:
         return self.path(run_id) / JOB_FILE
+
+    def video_path(self, run_id: str) -> Path:
+        return self.path(run_id) / VIDEO_FILE
+
+    def subtitles_path(self, run_id: str) -> Path:
+        return self.path(run_id) / SUBTITLES_FILE
+
+    def narration_track_path(self, run_id: str) -> Path:
+        return self.path(run_id) / NARRATION_FILE
+
+    def metadata_path(self, run_id: str) -> Path:
+        return self.path(run_id) / METADATA_FILE
+
+    def save_subtitles(self, run_id: str, srt: str) -> None:
+        """Written with LF whatever the platform, because that is what players and YouTube expect."""
+        self.subtitles_path(run_id).write_text(srt, encoding="utf-8", newline="\n")
+
+    def save_metadata(self, run_id: str, metadata: str) -> None:
+        self.metadata_path(run_id).write_text(metadata, encoding="utf-8")
 
     def load_script(self, run_id: str) -> Script | None:
         source = self.path(run_id) / SCRIPT_FILE

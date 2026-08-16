@@ -15,10 +15,18 @@ and the tool behaviour that exists today. Developer-facing notes live in
 uv sync
 ```
 
-That installs everything, including a CUDA build of torch (~2.5 GB), Kokoro and diffusers.
-Model weights are **not** bundled — the first narration downloads Kokoro-82M (~330 MB) and
-the first image downloads SDXL base plus the Lightning LoRA (~7 GB) into the Hugging Face
-cache.
+That installs everything Python, including a CUDA build of torch (~2.5 GB), Kokoro and
+diffusers. Model weights are **not** bundled — the first narration downloads Kokoro-82M
+(~330 MB) and the first image downloads SDXL base plus the Lightning LoRA (~7 GB) into the
+Hugging Face cache.
+
+**ffmpeg is a separate install and must be on PATH.** No Python package can carry it, and
+video assembly shells out to `ffmpeg` and `ffprobe` directly:
+
+```powershell
+winget install --id Gyan.FFmpeg -e
+ffmpeg -version        # confirm PATH picked it up; restart the shell if not
+```
 
 Confirm the install with the opt-in engine smoke test, which is excluded from the normal
 suite:
@@ -144,3 +152,48 @@ look. For a Scene that came out badly, `stickman_regenerate_image` redraws just 
   prompt is written into `script.json` *before* the image is drawn, so the saved Script
   always explains the picture next to it.
 - **`stickman_regenerate_image(run_id, 7, seed=...)`** — reproduce a specific image exactly.
+
+## Rendering the Video Package
+
+`stickman_render_video` is a background job like image generation: it returns at once and you
+poll `stickman_job_status` until `state` is `done`. It writes three things into the Run
+folder — `subtitles.srt`, `narration.wav` (the joined narration track), and `video.mp4`.
+
+The timing rule is the whole format. Each Scene's image holds the screen for **its Narration
+Clip plus the channel `scene_gap_seconds`** (0.4 s by default), hard cuts, no motion — so the
+video runs for exactly the narration plus one gap per Scene, and each cut lands on the moment
+the next Scene starts speaking. Subtitle cues use the same arithmetic, so captions can never
+drift from the picture. Nothing transcribes audio to get there
+([ADR-0001](docs/adr/0001-scene-first-scripts-no-timestamper.md)).
+
+The output is what YouTube wants: 1920x1080, 30 fps, H.264 in yuv420p, AAC audio, `faststart`.
+Images that are not 16:9 are fitted and padded with white, never stretched.
+
+Rendering needs every Scene to have both a clip and an image. If one is missing the call
+returns an `Error:` naming the Scene and the tool that fixes it, rather than starting a job
+that would produce a broken video.
+
+### Background music
+
+Music comes only from the folder in `channel.toml` (`paths.music_dir`, `music/` by default) —
+tracks **you** put there, which is what keeps a monetized video clear of Content ID. The
+YouTube Audio Library is the easy source.
+
+```
+stickman_list_music()                                  -> {"music_dir": "...", "tracks": ["calm-piano.mp3"]}
+stickman_render_video(run_id, music_track="calm-piano.mp3")
+```
+
+The track is looped or trimmed to the narration's length — it can never make the video longer
+— and laid under the speech at `render.music_level_db` (-22 dB by default). Naming a track the
+folder does not have returns an `Error:` listing the ones it does.
+
+### Upload metadata
+
+`stickman_save_metadata(run_id, title, description, tags)` writes `metadata.txt` with one
+section per YouTube field, ready to paste. The saved description always carries an
+AI-generation disclosure line, so what you paste is compliant; tick YouTube's altered or
+synthetic content box on upload as well.
+
+`stickman_get_run` reports the package as it fills in: `video_rendered`, `subtitles` and
+`metadata` are all derived from the files on disk, like every other field.

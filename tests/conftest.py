@@ -1,5 +1,8 @@
 import json
+import math
+import re
 import struct
+import subprocess
 import threading
 import time
 import wave
@@ -107,13 +110,18 @@ class FakeImages:
 
 
 def write_tiny_png(destination: Path, seed: int) -> None:
-    """A real 1x1 PNG coloured from the seed, so two seeds can never produce the same bytes."""
-    pixel = bytes([0, seed % 256, seed // 256 % 256, seed // 65536 % 256])
-    header = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
+    """A real 16:9 PNG coloured from the seed, so two seeds can never produce the same bytes."""
+    colour = (seed % 256, seed // 256 % 256, seed // 65536 % 256)
+    write_solid_png(destination, 16, 9, colour)
+
+
+def write_solid_png(destination: Path, width: int, height: int, colour: tuple[int, int, int]) -> None:
+    """One flat colour at any size, so a test can hand ffmpeg an aspect ratio of its choosing."""
+    raw = (b"\x00" + bytes(colour) * width) * height
     destination.write_bytes(
         b"\x89PNG\r\n\x1a\n"
-        + _png_chunk(b"IHDR", header)
-        + _png_chunk(b"IDAT", zlib.compress(pixel))
+        + _png_chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+        + _png_chunk(b"IDAT", zlib.compress(raw))
         + _png_chunk(b"IEND", b"")
     )
 
@@ -143,3 +151,78 @@ def poll_job(run_id: str, until: Callable[[dict], bool], timeout: float = GATE_T
 
 def finished(status: dict) -> bool:
     return status["state"] != "running"
+
+
+def write_tone_wav(destination: Path, seconds: float, hertz: float = 440.0) -> None:
+    """A full-scale sine, so a mixed-in copy's measured level reads straight as the applied gain."""
+    frames = round(seconds * SAMPLE_RATE)
+    samples = (round(32767 * math.sin(math.tau * hertz * frame / SAMPLE_RATE)) for frame in range(frames))
+    with wave.open(str(destination), "wb") as clip:
+        clip.setnchannels(1)
+        clip.setsampwidth(2)
+        clip.setframerate(SAMPLE_RATE)
+        clip.writeframes(b"".join(struct.pack("<h", sample) for sample in samples))
+
+
+def probe(path: Path) -> dict:
+    """Everything the render criteria assert about the output is read back with ffprobe, not ffmpeg."""
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_format", "-show_streams", "-of", "json", str(path)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return dict(json.loads(result.stdout))
+
+
+def probe_seconds(path: Path) -> float:
+    return float(probe(path)["format"]["duration"])
+
+
+def stream(path: Path, kind: str) -> dict:
+    return next(found for found in probe(path)["streams"] if found["codec_type"] == kind)
+
+
+def first_frame(path: Path) -> bytes:
+    """Raw RGB of the opening frame, so a test can look at what a viewer would actually see."""
+    return first_frame_at(path, 0.0)
+
+
+def first_frame_at(path: Path, seconds: float) -> bytes:
+    result = subprocess.run(
+        ["ffmpeg", "-v", "error", "-ss", f"{seconds:.6f}", "-i", str(path)]
+        + ["-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+        capture_output=True,
+        check=True,
+    )
+    return result.stdout
+
+
+def peak_dbfs(path: Path, from_seconds: float = 0.0) -> float:
+    """Full scale is 0 dB, so a bed mixed under silence peaks at exactly the gain it was given."""
+    result = subprocess.run(
+        ["ffmpeg", "-v", "info", "-ss", str(from_seconds), "-i", str(path), "-af", "volumedetect", "-f", "null", "-"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    found = re.search(r"max_volume: (-?\d+(?:\.\d+)?) dB", result.stderr)
+    assert found, f"ffmpeg reported no peak level for {path.name}"
+    return float(found.group(1))
+
+
+def pixel(frame: bytes, x: int, y: int, width: int = 1920) -> tuple[int, int, int]:
+    start = (y * width + x) * 3
+    return frame[start], frame[start + 1], frame[start + 2]
+
+
+def frame_colours(path: Path) -> list[tuple[int, int, int]]:
+    """Every frame flattened to one pixel, so a test can name the exact frame a cut lands on."""
+    result = subprocess.run(
+        ["ffmpeg", "-v", "error", "-i", str(path)]
+        + ["-vf", "scale=1:1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+        capture_output=True,
+        check=True,
+    )
+    raw = result.stdout
+    return [(raw[at], raw[at + 1], raw[at + 2]) for at in range(0, len(raw) - 2, 3)]

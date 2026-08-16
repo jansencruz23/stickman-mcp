@@ -13,7 +13,9 @@ from .config import ChannelConfig, load_channel_config
 from .illustration import generate_images, redraw_scene, redraw_seed
 from .images import ImageBackend, ImageError, SDXLLightningBackend
 from .jobs import RUNNING, Job
+from .metadata import build_metadata
 from .narration import synthesize
+from .render import RENDER_STEPS, RenderError, missing_asset_error, music_path, music_tracks, render
 from .runs import RunStore
 from .script import (
     Script,
@@ -144,12 +146,16 @@ def _staleness_warning(runs: RunStore, run_id: str, current: Script) -> str | No
     except ScriptError:
         previous = None  # unreadable, so nothing on disk can be trusted to match
     stale = []
+    spoken = previous is None or narration_changed(previous, current)
+    drawn = previous is None or image_prompts_changed(previous, current)
     clips = runs.narration_clip_count(run_id)
-    if clips and (previous is None or narration_changed(previous, current)):
+    if clips and spoken:
         stale.append(f"{clips} narration clip(s) in audio/ (stickman_synthesize_narration)")
     images = runs.image_count(run_id)
-    if images and (previous is None or image_prompts_changed(previous, current)):
+    if images and drawn:
         stale.append(f"{images} image(s) in images/ (stickman_generate_images)")
+    if (spoken or drawn) and runs.video_path(run_id).is_file():
+        stale.append("the rendered video and its subtitles (stickman_render_video)")
     if not stale:
         return None
     return (
@@ -172,8 +178,9 @@ def stickman_get_run(run_id: str) -> str:
 
     Returns:
         JSON: {"run_id": str, "path": str, "has_script": bool, "scene_count": int,
-        "narration_clips": int, "images": int, "video_rendered": bool}, plus "job" holding
-        the current or last background job when one has run (see stickman_job_status).
+        "narration_clips": int, "images": int, "video_rendered": bool, "subtitles": bool,
+        "metadata": bool}, plus "job" holding the current or last background job when one
+        has run (see stickman_job_status). The last three are the Video Package.
         On failure an "Error: ..." string naming the tool that fixes it.
     """
     runs = _runs()
@@ -265,6 +272,100 @@ def stickman_generate_images(run_id: str, only_missing: bool = False) -> str:
         resume="Call stickman_generate_images with only_missing set to draw the Scenes it did not reach.",
     )
     return _ok({"run_id": run_id, **started})
+
+
+@server.tool(
+    name="stickman_render_video",
+    annotations=ToolAnnotations(title="Render Video", read_only_hint=False, idempotent_hint=True),
+)
+def stickman_render_video(run_id: str, music_track: str | None = None) -> str:
+    """Start a background job assembling the Video Package: subtitles then the 1080p MP4.
+
+    Each Scene's image holds the screen for its Narration Clip plus the channel gap, hard cuts
+    only, so the video is exactly as long as the narration plus one gap per Scene.
+
+    Args:
+        run_id: The Run returned by stickman_create_run, narrated and illustrated already.
+        music_track: A file name from stickman_list_music, laid quietly under the narration at
+            the channel's music level and looped or trimmed to fit. Omit it for narration only.
+
+    Returns:
+        JSON: {"run_id": str, "job": "render", "state": "running", "done": 0, "total": 3,
+        "resume": str}. Poll stickman_job_status until state is done. On failure an
+        "Error: ..." string naming the tool that fixes it.
+    """
+    runs = _runs()
+    try:
+        script = _script_for(runs, run_id, "render")
+    except ToolError as exc:
+        return str(exc)
+    job = _job(runs, run_id)
+    running = _already_running(job, run_id)  # asked first, or a half-drawn batch reads as a Run short of images
+    if running:
+        return running
+    missing = missing_asset_error(runs, run_id, script)
+    if missing:
+        return _error(f"Run '{run_id}' is not ready to render. {missing}")
+    config = channel_config()
+    try:
+        music = music_path(config, music_track) if music_track else None
+    except RenderError as exc:
+        return _error(f"{exc} Call stickman_list_music to see the folder.")
+    started = job.start(
+        "render",
+        RENDER_STEPS,
+        lambda: render(runs, run_id, script, config, music),
+        resume="Call stickman_render_video again; it rebuilds the whole Video Package from scratch.",
+    )
+    return _ok({"run_id": run_id, **started})
+
+
+@server.tool(
+    name="stickman_list_music",
+    annotations=ToolAnnotations(title="List Music", read_only_hint=True, idempotent_hint=True),
+)
+def stickman_list_music() -> str:
+    """List the background music tracks in the channel's curated folder.
+
+    Only tracks the creator put there are ever used, so a monetized video never risks a
+    Content ID claim. Pass one of these names to stickman_render_video as music_track.
+
+    Returns:
+        JSON: {"music_dir": str, "tracks": [str]}. An empty list means the folder holds no
+        audio files yet.
+    """
+    config = channel_config()
+    return _ok({"music_dir": str(config.music_dir), "tracks": music_tracks(config)})
+
+
+@server.tool(
+    name="stickman_save_metadata",
+    annotations=ToolAnnotations(title="Save Metadata", read_only_hint=False, idempotent_hint=True),
+)
+def stickman_save_metadata(run_id: str, title: str, description: str, tags: list[str]) -> str:
+    """Complete the Video Package with the upload fields, written for copy-paste into YouTube.
+
+    The saved description carries an AI-generation disclosure line, so what the creator pastes
+    is already compliant. Remind them to tick YouTube's altered or synthetic content box too.
+
+    Args:
+        run_id: The Run returned by stickman_create_run.
+        title: The video title.
+        description: The video description; the disclosure line is appended for you.
+        tags: Search tags, saved comma-joined the way YouTube's tag box wants them.
+
+    Returns:
+        JSON: {"run_id": str, "metadata": str, "tags": int}.
+        On failure an "Error: ..." string naming the tool that fixes it.
+    """
+    runs = _runs()
+    if not runs.exists(run_id):
+        return _unknown_run(run_id)
+    cleaned = [tag.strip() for tag in tags if tag.strip()]
+    if not title.strip() or not description.strip():
+        return _error("title and description must both be non-empty. Nothing was written.")
+    runs.save_metadata(run_id, build_metadata(title.strip(), description.strip(), cleaned))
+    return _ok({"run_id": run_id, "metadata": str(runs.metadata_path(run_id)), "tags": len(cleaned)})
 
 
 @server.tool(
