@@ -15,10 +15,13 @@ SCENE = "a stickman waving beside a giant coin"
 
 
 @pytest.mark.smoke
-def test_real_kokoro_speaks_the_channel_voice_into_a_24_khz_clip(tmp_path):
-    destination = tmp_path / "smoke.wav"
+def test_real_kokoro_speaks_the_channel_voice_into_a_24_khz_clip():
+    """Writes into projects/smoke/ rather than a temp dir, because a human has to hear the locked voice."""
+    config = load_channel_config()
+    destination = config.projects_dir / "smoke" / f"kokoro-{config.voice}.wav"
+    destination.parent.mkdir(parents=True, exist_ok=True)
 
-    KokoroEngine().synthesize(SENTENCE, load_channel_config().voice, destination)
+    KokoroEngine().synthesize(SENTENCE, config.voice, config.voice_speed, destination)
 
     assert clip_duration_seconds(destination) > 0.5
     with wave.open(str(destination), "rb") as clip:

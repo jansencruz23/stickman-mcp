@@ -17,6 +17,8 @@ from stickman_mcp import server
 from stickman_mcp.config import CONFIG_ENV_VAR, load_channel_config
 from stickman_mcp.tts import SAMPLE_RATE
 
+SHIPPED_CONFIG = Path(__file__).resolve().parents[1] / "channel.toml"
+
 TEST_CHANNEL = """
 [paths]
 projects_dir = "projects"
@@ -25,6 +27,10 @@ music_dir = "music"
 [style]
 prefix = "test stickman style,"
 negative_prompt = "photo"
+
+[voice]
+name = "test_voice"
+speed = 1.4
 
 [image]
 base_seed = 4242
@@ -42,13 +48,32 @@ def _isolated_config_cache():
     server.image_backend.cache_clear()
 
 
+def _config_in_use(tmp_path, monkeypatch, body: str):
+    """Relative paths resolve against the config, so writing it here redirects the whole Run folder."""
+    source = tmp_path / "channel.toml"
+    source.write_text(body, encoding="utf-8")
+    monkeypatch.setenv(CONFIG_ENV_VAR, str(source))
+    return load_channel_config(source)
+
+
 @pytest.fixture
 def channel(tmp_path, monkeypatch):
     """Point the tools at a throwaway channel config and projects folder."""
-    source = tmp_path / "channel.toml"
-    source.write_text(TEST_CHANNEL, encoding="utf-8")
-    monkeypatch.setenv(CONFIG_ENV_VAR, str(source))
-    return load_channel_config(source)
+    return _config_in_use(tmp_path, monkeypatch, TEST_CHANNEL)
+
+
+@pytest.fixture
+def locked_channel(tmp_path, monkeypatch):
+    """The shipped channel identity itself, so tests read the values a real Run would use."""
+    return _config_in_use(tmp_path, monkeypatch, SHIPPED_CONFIG.read_text(encoding="utf-8"))
+
+
+@dataclass(frozen=True)
+class SpeechCall:
+    text: str
+    voice: str
+    speed: float
+    destination: Path
 
 
 class FakeTTS:
@@ -56,10 +81,10 @@ class FakeTTS:
 
     def __init__(self) -> None:
         self.seconds: dict[str, float] = {}
-        self.calls: list[tuple[str, str, Path]] = []
+        self.calls: list[SpeechCall] = []
 
-    def synthesize(self, text: str, voice: str, destination: Path) -> None:
-        self.calls.append((text, voice, destination))
+    def synthesize(self, text: str, voice: str, speed: float, destination: Path) -> None:
+        self.calls.append(SpeechCall(text, voice, speed, destination))
         write_silent_wav(destination, self.seconds.get(text, DEFAULT_CLIP_SECONDS))
 
 

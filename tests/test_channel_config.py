@@ -1,10 +1,25 @@
 from pathlib import Path
 
 import pytest
+from conftest import SHIPPED_CONFIG
 
 from stickman_mcp.config import ConfigError, load_channel_config
 
-SHIPPED_CONFIG = Path(__file__).resolve().parents[1] / "channel.toml"
+LOCKED_STYLE_PREFIX = (
+    "flat 2d cartoon illustration, stick figure characters with big round cream circle heads, "
+    "simple dot eyes and thin eyebrows, thin black stick arms and legs with small round joint dots, "
+    "bold clean black outlines, flat muted colour fills, simple cel shaded scenery, no gradients,"
+)
+
+
+def test_the_shipped_config_carries_the_locked_channel_identity():
+    """The tuning session's whole output. Changing these is a channel decision, not a passing edit."""
+    config = load_channel_config(SHIPPED_CONFIG)
+
+    assert config.style_prefix == LOCKED_STYLE_PREFIX
+    assert (config.voice, config.voice_speed) == ("am_puck", 1.15)
+    negatives = config.negative_prompt
+    assert not any(word in negatives for word in ("color", "colour")), "the locked look is coloured"
 
 
 def test_shipped_config_loads_documented_defaults():

@@ -63,9 +63,17 @@ def test_a_deleted_clip_is_the_only_one_resynthesized(channel, fake_tts):
 
     response = json.loads(stickman_synthesize_narration(run_id))
 
-    assert [text for text, _voice, _path in fake_tts.calls] == [SECOND]
+    assert [call.text for call in fake_tts.calls] == [SECOND]
     assert response["synthesized"] == 1
     assert response["skipped"] == 1
+
+
+def test_every_scene_is_spoken_in_the_channel_voice_at_the_channel_speed(channel, fake_tts):
+    run_id = _scripted_run()
+
+    stickman_synthesize_narration(run_id)
+
+    assert [(call.voice, call.speed) for call in fake_tts.calls] == [("test_voice", 1.4)] * 2
 
 
 def test_run_status_counts_a_clip_for_every_scene_once_narration_finishes(channel, fake_tts):
@@ -102,7 +110,7 @@ def test_narrating_a_run_without_a_script_names_the_tool_that_saves_one(channel,
 def test_an_engine_failure_is_reported_as_an_error_not_a_traceback(channel, fake_tts, monkeypatch):
     run_id = _scripted_run()
 
-    def explode(text: str, voice: str, destination) -> None:
+    def explode(text: str, voice: str, speed: float, destination) -> None:
         raise RuntimeError("espeak-ng library not found")
 
     monkeypatch.setattr(fake_tts, "synthesize", explode)

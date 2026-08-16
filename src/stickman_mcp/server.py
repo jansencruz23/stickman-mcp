@@ -220,7 +220,8 @@ def stickman_synthesize_narration(run_id: str) -> str:
     except ToolError as exc:
         return str(exc)
     try:
-        clips = synthesize(runs, run_id, script, tts_engine(), channel_config().voice)
+        config = channel_config()
+        clips = synthesize(runs, run_id, script, tts_engine(), config.voice, config.voice_speed)
     except TTSError as exc:
         return _error(f"narration stopped: {exc} Clips already finished are kept.")
     scenes = [{"id": clip.scene_id, "duration_seconds": round(clip.duration_seconds, 3)} for clip in clips]

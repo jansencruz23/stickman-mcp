@@ -287,10 +287,36 @@ synthetic content box on upload as well.
 the Style Prefix every image inherits, the narration voice, the inter-Scene gap, the music
 level, and the render and sampler settings. Every knob is commented in the file.
 
-The Style Prefix and the voice are meant to be chosen once from real outputs — a grid of candidate
-styles against the same prompts, and one sample line read in each candidate voice — rather than by
-editing strings and hoping. **That session has not happened yet: the committed prefix and voice are
-placeholders**, so the look of anything you generate today is provisional.
+**The tuning session is done (2026-08-16).** The Style Prefix and the voice were chosen from real
+outputs rather than by editing strings and hoping, and the committed values are the channel's
+locked identity:
 
-Two knobs worth knowing before then: `render.music_level_db` if the bed sits too loud or too
-quiet under the speech, and `render.scene_gap_seconds` if the cuts feel rushed.
+- **Style** — a flat 2D cartoon stickman: round cream circle heads, thin black stick limbs with
+  joint dots, bold black outlines, flat muted colour fills. It is a *coloured* look, which is why
+  `color` was removed from `style.negative_prompt`.
+- **Voice** — `am_puck` at `voice.speed = 1.15`.
+
+`tests/test_channel_config.py` asserts these exact values, so changing them is a deliberate
+channel decision that updates a test, not a passing edit.
+
+### Re-running the tuning session
+
+```
+uv run python scripts/style_grid.py [--guidance 3.0]     # candidate prefixes x sample prompts
+uv run python scripts/voice_audition.py                  # one line in each candidate voice
+```
+
+Both write into the gitignored `tuning/` folder, foldered by the setting that varies, so a second
+pass never overwrites the grid you are comparing against. Edit the candidate list at the top of
+either script, run it, look or listen, then move the winner into `channel.toml`.
+
+Two things the grids taught, worth knowing before you re-run them:
+
+- **The negative prompt does nothing at `image.guidance_scale = 1.0`.** diffusers only runs
+  classifier-free guidance above 1.0, and SDXL-Lightning is distilled to be used without it.
+  Raising guidance to 3.0 makes it bite, at roughly double the time per image.
+- **Kokoro's `speed` is not a linear time scale.** 1.15 measures about 1.07x faster and 1.25 about
+  1.18x, so pick the number by measuring a clip, not by arithmetic.
+
+Two other knobs worth knowing: `render.music_level_db` if the bed sits too loud or too quiet under
+the speech, and `render.scene_gap_seconds` if the cuts feel rushed.

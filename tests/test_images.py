@@ -120,6 +120,17 @@ def test_the_server_applies_the_channel_style_and_a_seed_per_scene_to_every_prom
     assert [call.seed for call in fake_images.calls] == [4243, 4244, 4245]  # base_seed 4242 plus scene id
 
 
+def test_regenerating_a_scene_draws_it_in_the_locked_channel_style(locked_channel, fake_images):
+    """Reads the shipped config, so this fails if the tuned Style Prefix stops reaching the backend."""
+    run_id = _scripted_run()
+
+    stickman_regenerate_image(run_id, 2)
+
+    call = fake_images.calls[-1]
+    assert call.prompt == f"{locked_channel.style_prefix} {SCRIPT['scenes'][1]['image_prompt']}"
+    assert call.negative_prompt == locked_channel.negative_prompt
+
+
 def _batch(run_id: str) -> None:
     stickman_generate_images(run_id)
     poll_job(run_id, finished)

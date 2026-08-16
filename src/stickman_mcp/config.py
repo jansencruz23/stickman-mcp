@@ -24,6 +24,7 @@ class ChannelConfig:
     style_prefix: str
     negative_prompt: str
     voice: str
+    voice_speed: float
     width: int
     height: int
     fps: int
@@ -56,6 +57,7 @@ def load_channel_config(path: Path | None = None) -> ChannelConfig:
         style_prefix=read.text("style", "prefix"),
         negative_prompt=read.text("style", "negative_prompt"),
         voice=read.text("voice", "name", "af_heart"),
+        voice_speed=read.number("voice", "speed", 1.0, minimum=0.5),
         width=read.whole("render", "width", 1920),
         height=read.whole("render", "height", 1080),
         fps=read.whole("render", "fps", 30),

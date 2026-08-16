@@ -49,6 +49,6 @@ addopts = "-m 'not smoke'"
 markers = ["smoke: opt-in tests that load real engines (GPU time and model downloads)"]
 
 [tool.mypy]
-files = ["src", "tests"]
+files = ["src", "tests", "scripts"]
 python_version = "3.11"
 ignore_missing_imports = true

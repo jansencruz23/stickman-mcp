@@ -17,8 +17,8 @@ class TTSError(Exception):
 
 
 class TTSEngine(Protocol):
-    def synthesize(self, text: str, voice: str, destination: Path) -> None:
-        """Write text, spoken in voice, to destination as a mono WAV."""
+    def synthesize(self, text: str, voice: str, speed: float, destination: Path) -> None:
+        """Write text, spoken in voice at speed, to destination as a mono WAV."""
 
 
 def clip_duration_seconds(path: Path) -> float:
@@ -39,8 +39,9 @@ class KokoroEngine:
     def __init__(self) -> None:
         self._pipeline: Any = None
 
-    def synthesize(self, text: str, voice: str, destination: Path) -> None:
-        chunks = [result.audio for result in self._loaded()(text, voice=voice) if result.audio is not None]
+    def synthesize(self, text: str, voice: str, speed: float, destination: Path) -> None:
+        results = self._loaded()(text, voice=voice, speed=speed)
+        chunks = [result.audio for result in results if result.audio is not None]
         if not chunks:
             raise TTSError(f"Kokoro produced no audio for {text!r}. Check the voice name in channel.toml.")
         samples = np.concatenate([np.asarray(chunk, dtype=np.float32) for chunk in chunks])

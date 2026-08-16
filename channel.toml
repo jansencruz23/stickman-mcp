@@ -8,11 +8,15 @@ music_dir = "music"
 
 [style]
 # Prepended to every Image Prompt by the server; Claude's prompts describe scene content only.
-prefix = "minimalist black and white stickman drawing, thick clean ink lines, plain white background, simple flat vector illustration,"
-negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signature, blurry, extra limbs, cluttered background, color"
+# Locked 2026-08-16 from the style grid: a flat coloured cartoon stickman, not black-and-white line art.
+prefix = "flat 2d cartoon illustration, stick figure characters with big round cream circle heads, simple dot eyes and thin eyebrows, thin black stick arms and legs with small round joint dots, bold clean black outlines, flat muted colour fills, simple cel shaded scenery, no gradients,"
+negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signature, blurry, extra limbs, cluttered background"
 
 [voice]
-name = "af_heart"
+# Locked 2026-08-16 from the voice audition.
+name = "am_puck"
+# Passed straight to Kokoro, whose scale is not linear: 1.15 measures 1.07x faster, 1.25 measures 1.18x.
+speed = 1.15
 
 [render]
 width = 1920
