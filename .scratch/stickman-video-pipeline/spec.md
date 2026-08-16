@@ -85,7 +85,7 @@ The creator gives a Topic in conversation. Claude authors the Script scene-first
 
 ## Out of Scope
 
-- Meta AI / Playwright browser automation as an image backend (the protocol is the escape hatch if ever revisited).
+- ~~Meta AI / Playwright browser automation as an image backend.~~ **Brought into scope 2026-08-14** as ticket 07, after local SDXL output was rejected on style. It is an addition behind the `ImageBackend` protocol, not a replacement: local generation stays the default until the creator switches it. See that ticket for the credential, anti-detection, account-risk, and commercial-rights constraints.
 - Intro/outro end-cards, thumbnails, panning/zoom/motion effects, transitions other than hard cuts.
 - Languages other than English; multiple simultaneous Runs; per-video style or voice choices.
 - YouTube upload automation and analytics.

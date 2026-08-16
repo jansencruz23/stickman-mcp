@@ -77,7 +77,11 @@ unknown run      -> Error: no Run named '2026-01-01-nope'. Call stickman_create_
 
 ### Left for you to check by hand
 
-1. **Restart Claude Code and run `/mcp`** to confirm the project-scoped server appears as `stickman_mcp` and the three tools are listed. `.mcp.json` is new, so the running session will not have picked it up. This is the only criterion I verified by an equivalent route (direct stdio handshake) rather than through the Claude Code UI itself.
-2. **Approve `.mcp.json` if prompted** — Claude Code asks for consent before launching a project-scoped server.
-3. **Skim `channel.toml`** and confirm the placeholder Style Prefix and `af_heart` voice are acceptable stand-ins until ticket 06 locks the real ones.
-4. `import torch` prints a `Failed to initialize NumPy` UserWarning because numpy is not installed yet. Harmless here (nothing in `src/` imports torch); numpy arrives as a transitive dependency with Kokoro in ticket 02.
+1. ~~Restart Claude Code and confirm the server registers.~~ **Confirmed live.** After the restart, Claude Code loaded `.mcp.json`, exposed the three tools as `mcp__stickman_mcp__*`, and a real call through Claude Code's own MCP client returned the expected error convention: `Error: no Run named '2026-01-01-not-a-real-run'. Call stickman_create_run to start one.` Criterion 3 is therefore verified through the Claude Code UI path as well as the direct stdio handshake.
+2. **Skim `channel.toml`** and confirm the placeholder Style Prefix and `af_heart` voice are acceptable stand-ins. Do not hand-tune them now — ticket 06 picks both from real generated output, which is the point of that session.
+3. `import torch` prints a `Failed to initialize NumPy` UserWarning because numpy is not installed yet. Harmless here (nothing in `src/` imports torch); numpy arrives as a transitive dependency with Kokoro in ticket 02.
+
+### Known prerequisites for the next tickets
+
+- `espeak-ng` is confirmed **not installed** — ticket 02 installs it (winget), expect a UAC prompt.
+- Disk: 144 GB free, comfortably above the ~7.3 GB of Kokoro + SDXL weights that tickets 02 and 03 download.

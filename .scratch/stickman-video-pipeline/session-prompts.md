@@ -129,3 +129,32 @@ Environment: Windows 11; uv; RTX 3060 (real engines run here — expect model lo
 
 Done-protocol beyond /implement: verify every criterion, tick the verified checkboxes, append evidence under "## Comments", set Status: ready-for-human, and confirm which style and voice are now locked.
 ```
+
+---
+
+## Ticket 07 — Meta AI image backend (Playwright)
+
+```
+/implement .scratch/stickman-video-pipeline/issues/07-meta-ai-image-backend.md
+
+I will stay in this session for the manual Meta login and to judge the output style.
+
+Blocker check first: open .scratch/stickman-video-pipeline/issues/03-image-slice.md and confirm its criteria are ticked; stop and tell me if not.
+
+Before writing code, read in order: .scratch/stickman-video-pipeline/spec.md (note the Out of Scope entry recording why this came into scope), the ticket above — its "Constraints that are not negotiable" section is binding, not advisory — and CONTEXT.md.
+
+Scope: only this ticket — a second ImageBackend that drives meta.ai in a real browser, selected by one channel-config setting, with local SDXL staying the default. No changes to the tool surface: stickman_generate_images, stickman_job_status and stickman_regenerate_image must behave identically whichever backend is active.
+
+Hard constraints, do not deviate:
+- Never read, store, type, or log a Meta password, cookie, or token. Authentication is a persistent Playwright profile directory I populate by logging in by hand once. Gitignore that directory.
+- Do not implement anti-detection, fingerprint spoofing, stealth plugins, or CAPTCHA solving. On a checkpoint, CAPTCHA, or block, fail loudly with an actionable message and stop.
+- Sequential requests in one chat thread with a configurable delay. No parallel tabs, no retry storms.
+
+Pre-agreed seams for /tdd: the ImageBackend contract with the browser layer faked, plus a local stub page for the page-interaction logic. The default suite must launch no browser and touch no network; anything hitting real meta.ai is marked and excluded by default.
+
+Environment: Windows 11; uv; the repo path contains spaces — quote paths. Playwright browsers may need installing.
+
+Note the final criterion is a go/no-go: if the returned images do not match the style I want, record "tested and rejected" in Comments and leave local SDXL as the default rather than sinking time into selector hardening. Check with me before doing that work either way.
+
+Done-protocol beyond /implement: verify every criterion, tick the verified checkboxes, append evidence under "## Comments", set Status: ready-for-human, and tell me which images to judge.
+```
