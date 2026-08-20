@@ -9,7 +9,7 @@ music_dir = "music"
 [style]
 # Prepended to every Image Prompt by the server; Claude's prompts describe scene content only.
 # Locked 2026-08-16 from the style grid: a flat coloured cartoon stickman, not black-and-white line art.
-prefix = "flat 2d cartoon illustration, stick figure characters with big round cream circle heads, simple dot eyes and thin eyebrows, plain thin black stick arms and legs drawn as unbroken lines, bold clean black outlines, flat muted colour fills, simple cel shaded scenery, no gradients,"
+prefix = "flat 2d cartoon illustration, stick figure characters with big round cream circle heads, simple dot eyes and thin eyebrows, plain thin black stick arms and legs drawn as unbroken lines, bold clean black outlines, flat muted colour fills, simple cel shaded scenery, no gradients, 16:9 widescreen landscape frame,"
 negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signature, blurry, extra limbs, cluttered background, joint dots, visible elbow and knee joints"
 
 [voice]

@@ -273,7 +273,9 @@ explicit `seed` cannot reproduce an earlier picture — every request draws afre
 works as usual. It has no negative-prompt field, so the channel's negative prompt is appended to the
 message as an `Avoid: ...` sentence instead. And it takes no size, step count or guidance, so
 `image.width`, `image.height`, `image.steps` and `image.guidance_scale` reach the local backend
-only — Meta returns its own size (about 1920x1280), which the render fits and pads like any other.
+only. Meta picks its own size, so the Style Prefix asks for a **16:9 widescreen landscape frame**
+in words instead: with that clause it returns 2048x1152 and fills the 1080p frame exactly, and
+without it 1920x1280, which the render pillarboxes with 150 px of white down each side.
 
 A browser window is visible for the whole batch, on purpose: this is your own session, not a hidden
 one. Leave it alone while a job runs — a stray click lands in the chat.
@@ -342,10 +344,11 @@ level, and the render and sampler settings. Every knob is commented in the file.
 outputs rather than by editing strings and hoping, and the committed values are the channel's
 locked identity:
 
-- **Style** — a flat 2D cartoon stickman: round cream circle heads, plain thin black stick limbs
-  drawn as unbroken lines, bold black outlines, flat muted colour fills. It is a *coloured* look,
-  which is why `color` was removed from `style.negative_prompt`. The joint dots the tuning session
-  originally picked were dropped on 2026-08-20 after seeing them on real Scenes.
+- **Style** — a flat 2D cartoon stickman in a 16:9 widescreen frame: round cream circle heads, plain
+  thin black stick limbs drawn as unbroken lines, bold black outlines, flat muted colour fills. It is
+  a *coloured* look, which is why `color` was removed from `style.negative_prompt`. The joint dots
+  the tuning session originally picked were dropped on 2026-08-20 after seeing them on real Scenes,
+  and the 16:9 clause was added the same day to stop Meta's 3:2 stills being pillarboxed.
 - **Voice** — `am_puck` at `voice.speed = 1.15`.
 
 `tests/test_channel_config.py` asserts these exact values, so changing them is a deliberate

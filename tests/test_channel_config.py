@@ -8,7 +8,8 @@ from stickman_mcp.config import ConfigError, load_channel_config
 LOCKED_STYLE_PREFIX = (
     "flat 2d cartoon illustration, stick figure characters with big round cream circle heads, "
     "simple dot eyes and thin eyebrows, plain thin black stick arms and legs drawn as unbroken lines, "
-    "bold clean black outlines, flat muted colour fills, simple cel shaded scenery, no gradients,"
+    "bold clean black outlines, flat muted colour fills, simple cel shaded scenery, no gradients, "
+    "16:9 widescreen landscape frame,"
 )
 
 
