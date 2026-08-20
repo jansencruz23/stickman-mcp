@@ -23,12 +23,15 @@ def generate_images(
     only_missing: bool,
 ) -> Iterator[int]:
     """Yields each finished Scene id, so the caller can report progress without waiting for the batch."""
-    for scene in script.scenes:
-        destination = runs.image_path(run_id, scene.id)
-        if not (only_missing and destination.is_file()):
-            prompt = compose_prompt(scene, config.style_prefix)
-            draw(destination, prompt, config.negative_prompt, scene_seed(config, scene.id), backend)
-        yield scene.id
+    try:
+        for scene in script.scenes:
+            destination = runs.image_path(run_id, scene.id)
+            if not (only_missing and destination.is_file()):
+                prompt = compose_prompt(scene, config.style_prefix)
+                draw(destination, prompt, config.negative_prompt, scene_seed(config, scene.id), backend)
+            yield scene.id
+    finally:
+        backend.close()  # one batch is one browser session, so a Run's Scenes share one chat thread
 
 
 def redraw_scene(
@@ -42,7 +45,10 @@ def redraw_scene(
     """One Scene, one seed, same composition as the batch: a redraw differs only by seed and prompt."""
     destination = runs.image_path(run_id, scene.id)
     prompt = compose_prompt(scene, config.style_prefix)
-    draw(destination, prompt, config.negative_prompt, seed, backend)
+    try:
+        draw(destination, prompt, config.negative_prompt, seed, backend)
+    finally:
+        backend.close()
     return destination
 
 

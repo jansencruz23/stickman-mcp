@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .images import BACKENDS, SDXL
+
 CONFIG_ENV_VAR = "STICKMAN_CHANNEL_CONFIG"
 CONFIG_FILENAME = "channel.toml"
 
@@ -35,6 +37,10 @@ class ChannelConfig:
     image_steps: int
     guidance_scale: float
     base_seed: int
+    image_backend: str
+    meta_profile_dir: Path
+    meta_delay_seconds: float
+    meta_timeout_seconds: float
 
 
 def load_channel_config(path: Path | None = None) -> ChannelConfig:
@@ -68,6 +74,10 @@ def load_channel_config(path: Path | None = None) -> ChannelConfig:
         image_steps=read.whole("image", "steps", 4),
         guidance_scale=read.number("image", "guidance_scale", 1.0, minimum=0.0),
         base_seed=read.whole("image", "base_seed", 20260813, minimum=0),
+        image_backend=read.choice("image", "backend", SDXL, BACKENDS),
+        meta_profile_dir=_resolve(source, read.text("meta_ai", "profile_dir", "browser-profile")),
+        meta_delay_seconds=read.number("meta_ai", "request_delay_seconds", 8.0, minimum=0.0),
+        meta_timeout_seconds=read.number("meta_ai", "timeout_seconds", 180.0, minimum=1.0),
     )
     read.reject_unknown()
     return config
@@ -86,6 +96,12 @@ class _Reader:
         if not isinstance(value, str) or not value.strip():
             raise self._invalid(section, key, "a non-empty string", value)
         return value.strip()
+
+    def choice(self, section: str, key: str, default: str, allowed: tuple[str, ...]) -> str:
+        value = self._value(section, key, default)
+        if value not in allowed:
+            raise self._invalid(section, key, f"one of {', '.join(allowed)}", value)
+        return str(value)
 
     def whole(self, section: str, key: str, default: int, minimum: int = 1) -> int:
         value = self._value(section, key, default)

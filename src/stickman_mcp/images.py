@@ -5,6 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Protocol
 
+SDXL = "sdxl"
+META_AI = "meta-ai"
+BACKENDS = (SDXL, META_AI)
+
 BASE_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"
 LIGHTNING_REPO = "ByteDance/SDXL-Lightning"
 LIGHTNING_LORA = "sdxl_lightning_4step_lora.safetensors"
@@ -16,7 +20,10 @@ class ImageError(Exception):
 
 class ImageBackend(Protocol):
     def generate(self, prompt: str, negative_prompt: str, seed: int, destination: Path) -> None:
-        """Draw prompt into destination as a PNG, reproducibly for a given seed."""
+        """Draw prompt into destination as a PNG, reproducibly for a given seed where the engine has one."""
+
+    def close(self) -> None:
+        """Release whatever this batch held open. A loaded local model is not held open by a batch."""
 
 
 class SDXLLightningBackend:
@@ -43,6 +50,9 @@ class SDXLLightningBackend:
             generator=torch.Generator(device=pipeline.device).manual_seed(seed),
         ).images[0]
         image.save(destination, format="PNG")
+
+    def close(self) -> None:
+        """Deliberately nothing: the weights cost 40 s to load, so they outlive every batch."""
 
     def _loaded(self) -> Any:
         if self._pipeline is None:

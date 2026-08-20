@@ -11,8 +11,9 @@ from mcp.types import ToolAnnotations
 
 from .config import ChannelConfig, load_channel_config
 from .illustration import generate_images, redraw_scene, redraw_seed
-from .images import ImageBackend, ImageError, SDXLLightningBackend
+from .images import META_AI, ImageBackend, ImageError, SDXLLightningBackend
 from .jobs import RUNNING, Job
+from .meta_ai import MetaAIBackend, PlaywrightMetaChat
 from .metadata import build_metadata
 from .narration import synthesize
 from .render import RENDER_STEPS, RenderError, missing_asset_error, music_path, music_tracks, render
@@ -43,6 +44,11 @@ def tts_engine() -> TTSEngine:
 @lru_cache(maxsize=1)
 def image_backend() -> ImageBackend:
     config = channel_config()
+    if config.image_backend == META_AI:
+        return MetaAIBackend(
+            lambda: PlaywrightMetaChat(config.meta_profile_dir, config.meta_timeout_seconds),
+            config.meta_delay_seconds,
+        )
     return SDXLLightningBackend(config.image_width, config.image_height, config.image_steps, config.guidance_scale)
 
 
@@ -244,7 +250,8 @@ def stickman_generate_images(run_id: str, only_missing: bool = False) -> str:
     """Start a background job drawing one still image per Scene; returns at once, so poll for progress.
 
     The channel Style Prefix and negative prompt are applied here, so Image Prompts describe scene
-    content only. Seeds are the channel base seed plus the Scene id, so re-running repeats the batch.
+    content only. Seeds are the channel base seed plus the Scene id, so re-running repeats the batch
+    on the local backend; the Meta AI backend has no seed and draws afresh every time.
 
     Args:
         run_id: The Run returned by stickman_create_run, with a Script already saved.
@@ -412,7 +419,8 @@ def stickman_regenerate_image(
         scene_id: Which Scene to redraw, from 1 to the Script's scene count.
         image_prompt: Replacement scene content, when the picture is wrong rather than unlucky.
             Describe scene content only; the channel Style Prefix is applied by the server.
-        seed: Reuse a specific seed to reproduce an image; omit it to reroll.
+        seed: Reuse a specific seed to reproduce an image; omit it to reroll. Only the local
+            backend can reproduce from a seed, because the Meta AI backend has none.
 
     Returns:
         JSON: {"run_id": str, "scene_id": int, "seed": int, "image": str, "image_prompt": str,

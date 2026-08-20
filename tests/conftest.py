@@ -15,6 +15,7 @@ import pytest
 
 from stickman_mcp import server
 from stickman_mcp.config import CONFIG_ENV_VAR, load_channel_config
+from stickman_mcp.meta_ai import MetaAIBackend
 from stickman_mcp.tts import SAMPLE_RATE
 
 SHIPPED_CONFIG = Path(__file__).resolve().parents[1] / "channel.toml"
@@ -35,6 +36,9 @@ speed = 1.4
 [image]
 base_seed = 4242
 """
+
+# [image] is TEST_CHANNEL's last section, so the backend switch appends straight to it.
+META_CHANNEL = TEST_CHANNEL + 'backend = "meta-ai"\n'
 
 DEFAULT_CLIP_SECONDS = 1.0
 
@@ -60,6 +64,12 @@ def _config_in_use(tmp_path, monkeypatch, body: str):
 def channel(tmp_path, monkeypatch):
     """Point the tools at a throwaway channel config and projects folder."""
     return _config_in_use(tmp_path, monkeypatch, TEST_CHANNEL)
+
+
+@pytest.fixture
+def meta_channel(tmp_path, monkeypatch):
+    """The throwaway channel with its one setting flipped to the Meta AI backend."""
+    return _config_in_use(tmp_path, monkeypatch, META_CHANNEL)
 
 
 @pytest.fixture
@@ -117,8 +127,30 @@ class ImageCall:
     destination: Path
 
 
-class FakeImages:
-    """Writes tiny PNGs whose bytes follow the seed, and logs every prompt and seed it is given."""
+class FakeMetaChat:
+    """Answers the way Meta does: a fresh picture every time, never twice the same, no seed in sight."""
+
+    def __init__(self, opened: list["FakeMetaChat"] | None = None) -> None:
+        self.prompts: list[str] = []
+        self.closed = False
+        self.raises: Exception | None = None
+        if opened is not None:
+            opened.append(self)
+
+    def request_image(self, prompt: str) -> bytes:
+        self.prompts.append(prompt)
+        if self.raises is not None:
+            raise self.raises
+        return solid_png_bytes(16, 9, (len(self.prompts), len(prompt) % 256, 200))
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class LoggedBackend:
+    """The call log, pacing gate and failure switch every fake backend needs; subclasses only draw."""
+
+    honours_seeds = True
 
     def __init__(self) -> None:
         self.calls: list[ImageCall] = []
@@ -131,7 +163,37 @@ class FakeImages:
         self.calls.append(ImageCall(prompt, negative_prompt, seed, destination))
         if self.fail_after is not None and len(self.calls) > self.fail_after:
             raise RuntimeError(BACKEND_FAILURE)
-        write_tiny_png(destination, seed)
+        self.draw(self.calls[-1])
+
+    def draw(self, call: ImageCall) -> None:
+        raise NotImplementedError
+
+    def close(self) -> None:
+        """Batches close their backend; a local fake holds nothing open."""
+
+
+class FakeImages(LoggedBackend):
+    """Writes tiny PNGs whose bytes follow the seed, and logs every prompt and seed it is given."""
+
+    def draw(self, call: ImageCall) -> None:
+        write_tiny_png(call.destination, call.seed)
+
+
+class MetaUnderFakeChat(LoggedBackend):
+    """The real MetaAIBackend with a fake browser behind it, logging exactly as FakeImages does."""
+
+    honours_seeds = False  # Meta takes no seed, so the same request never returns the same pixels
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.chats: list[FakeMetaChat] = []
+        self.backend = MetaAIBackend(lambda: FakeMetaChat(self.chats), delay_seconds=0.0, sleep=lambda _: None)
+
+    def draw(self, call: ImageCall) -> None:
+        self.backend.generate(call.prompt, call.negative_prompt, call.seed, call.destination)
+
+    def close(self) -> None:
+        self.backend.close()
 
 
 def write_tiny_png(destination: Path, seed: int) -> None:
@@ -142,8 +204,12 @@ def write_tiny_png(destination: Path, seed: int) -> None:
 
 def write_solid_png(destination: Path, width: int, height: int, colour: tuple[int, int, int]) -> None:
     """One flat colour at any size, so a test can hand ffmpeg an aspect ratio of its choosing."""
+    destination.write_bytes(solid_png_bytes(width, height, colour))
+
+
+def solid_png_bytes(width: int, height: int, colour: tuple[int, int, int]) -> bytes:
     raw = (b"\x00" + bytes(colour) * width) * height
-    destination.write_bytes(
+    return (
         b"\x89PNG\r\n\x1a\n"
         + _png_chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
         + _png_chunk(b"IDAT", zlib.compress(raw))
@@ -153,6 +219,14 @@ def write_solid_png(destination: Path, width: int, height: int, colour: tuple[in
 
 def _png_chunk(kind: bytes, payload: bytes) -> bytes:
     return struct.pack(">I", len(payload)) + kind + payload + struct.pack(">I", zlib.crc32(kind + payload))
+
+
+def png_size(path: Path) -> tuple[int, int]:
+    """Reads the IHDR header directly, so the assertion does not lean on the imaging library."""
+    header = path.read_bytes()[:24]
+    assert header[:8] == b"\x89PNG\r\n\x1a\n", f"{path.name} is not a PNG"
+    width, height = struct.unpack(">II", header[16:24])
+    return width, height
 
 
 @pytest.fixture

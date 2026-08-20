@@ -1,10 +1,9 @@
 """Opt-in checks that the real engines are installed. Run with: uv run pytest -m smoke"""
 
-import struct
 import wave
-from pathlib import Path
 
 import pytest
+from conftest import png_size
 
 from stickman_mcp.config import load_channel_config
 from stickman_mcp.images import SDXLLightningBackend
@@ -42,11 +41,3 @@ def test_real_sdxl_lightning_draws_the_channel_style_at_the_configured_size():
     backend.generate(f"{config.style_prefix} {SCENE}", config.negative_prompt, 7, destination)
 
     assert png_size(destination) == (config.image_width, config.image_height)
-
-
-def png_size(path: Path) -> tuple[int, int]:
-    """Reads the IHDR header directly, so the assertion does not lean on the imaging library."""
-    header = path.read_bytes()[:24]
-    assert header[:8] == b"\x89PNG\r\n\x1a\n", f"{path.name} is not a PNG"
-    width, height = struct.unpack(">II", header[16:24])
-    return width, height

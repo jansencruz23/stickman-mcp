@@ -13,6 +13,8 @@ dependencies = [
     "mcp>=2.0.0",
     "numpy>=2.0.0",
     "peft>=0.13.0",
+    "pillow>=10.0.0",
+    "playwright>=1.49.0",
     "torch>=2.5.0",
     "transformers>=4.44.0",
 ]
@@ -45,8 +47,12 @@ explicit = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-m 'not smoke'"
-markers = ["smoke: opt-in tests that load real engines (GPU time and model downloads)"]
+addopts = "-m 'not smoke and not browser and not live'"
+markers = [
+    "smoke: opt-in tests that load real engines (GPU time and model downloads)",
+    "browser: opt-in tests that launch a real browser against a local stub page (still offline)",
+    "live: opt-in tests that drive the real meta.ai in the creator's logged-in browser profile",
+]
 
 [tool.mypy]
 files = ["src", "tests", "scripts"]

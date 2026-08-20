@@ -3,8 +3,10 @@ import threading
 import time
 from typing import Any
 
-from conftest import BACKEND_FAILURE, finished, poll_job
+import pytest
+from conftest import BACKEND_FAILURE, FakeImages, MetaUnderFakeChat, finished, poll_job
 
+from stickman_mcp import server
 from stickman_mcp.server import (
     stickman_create_run,
     stickman_generate_images,
@@ -13,6 +15,15 @@ from stickman_mcp.server import (
     stickman_regenerate_image,
     stickman_save_script,
 )
+
+
+@pytest.fixture(params=["local", "meta-ai"])
+def fake_images(request, monkeypatch):
+    """Every criterion below is asserted against both backends, because the contract is the same one."""
+    backend = FakeImages() if request.param == "local" else MetaUnderFakeChat()
+    monkeypatch.setattr(server, "image_backend", lambda: backend)
+    return backend
+
 
 TOPIC = "How compound interest works"
 SCRIPT: dict[str, Any] = {
@@ -149,6 +160,8 @@ def test_regenerating_without_a_seed_rerolls_into_a_different_image(channel, fak
 
 
 def test_regenerating_with_the_batch_seed_reproduces_the_batch_image_exactly(channel, fake_images):
+    if not fake_images.honours_seeds:
+        pytest.skip("Meta AI accepts no seed, so only a local backend can promise the same pixels twice")
     run_id = _scripted_run()
     _batch(run_id)
     image = channel.projects_dir / run_id / "images" / "002.png"

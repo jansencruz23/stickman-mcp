@@ -227,6 +227,57 @@ from `channel.toml` and applies the negative prompt to every image, so every fra
 video shares one look. Seeds are `base_seed + scene_id`, so re-running a batch reproduces
 the same pictures.
 
+### Where the pixels come from: Meta AI or local SDXL
+
+The channel draws with **Meta AI** — switched on 2026-08-20 because it matches the locked Style
+Prefix and local SDXL did not. Local SDXL stays in the repo and is one line away. Change it in
+`channel.toml` and restart the server:
+
+```toml
+[image]
+backend = "meta-ai"   # "sdxl" draws locally on the GPU instead
+```
+
+Nothing else changes: same tools, same Run folder, same `NNN.png` files, same job polling. Only the
+source of the pixels moves. Local SDXL needs no login and carries none of the risks below, so
+`"sdxl"` is the fallback whenever Meta is unavailable, rate limited, or unwelcome.
+
+**The one-time login, done by hand.** The server never sees your password. Once per machine:
+
+```powershell
+uv run playwright install chromium     # first time only
+uv run python scripts/meta_login.py
+```
+
+A browser opens on meta.ai using the profile folder named by `meta_ai.profile_dir`
+(`browser-profile/`, gitignored). Sign in yourself, then close the window — Meta leaves its session
+in that folder and the backend reuses it. Delete the folder to sign out. If the session lapses, the
+job stops with an `Error:` telling you to run the script again; it never asks for a password and
+never retries into a block.
+
+**How it behaves.** Requests go one at a time down a single chat thread per Run, with
+`meta_ai.request_delay_seconds` (8 s) held between Scenes. There is no CAPTCHA solving, no stealth
+plugin and no fingerprint spoofing. If Meta shows a security check, a checkpoint or a rate limit,
+the job ends in state `error` naming what Meta showed, and you deal with it in the browser yourself.
+
+**Two risks you are accepting by switching.**
+
+- **The account.** Meta's terms prohibit automated access to their products even while logged in, so
+  the account may be checkpointed or banned. Use an account you are willing to lose, not your
+  primary personal one.
+- **Commercial rights.** Meta publishes no statement on commercial rights to generated output, which
+  is unresolved for a monetized channel. Local SDXL carries no such question.
+
+**What Meta cannot do that SDXL can.** It has no seed, so `stickman_regenerate_image` with an
+explicit `seed` cannot reproduce an earlier picture — every request draws afresh, and rerolling
+works as usual. It has no negative-prompt field, so the channel's negative prompt is appended to the
+message as an `Avoid: ...` sentence instead. And it takes no size, step count or guidance, so
+`image.width`, `image.height`, `image.steps` and `image.guidance_scale` reach the local backend
+only — Meta returns its own size (about 1920x1280), which the render fits and pads like any other.
+
+A browser window is visible for the whole batch, on purpose: this is your own session, not a hidden
+one. Leave it alone while a job runs — a stray click lands in the chat.
+
 ### Fixing one Scene at the Image Review Checkpoint
 
 Images land in the Run's `images/` folder as `001.png`, `002.png`, ... — open the folder and

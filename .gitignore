@@ -10,6 +10,9 @@ projects/
 # One-off style/voice tuning outputs
 tuning/
 
+# The Meta AI backend's browser profile: the creator's own logged-in session, never committed
+browser-profile/
+
 # User-curated music tracks (keep the folder)
 music/*
 !music/.gitkeep

@@ -28,10 +28,23 @@ scene_gap_seconds = 0.4
 music_level_db = -22.0
 
 [image]
+# Where the pixels come from: "sdxl" draws locally on the GPU, "meta-ai" drives meta.ai in a browser.
+# Switched 2026-08-20 after the style check: Meta AI matches the locked prefix, local SDXL did not.
+backend = "meta-ai"
 # Near-16:9 generation size, upscaled and padded to the render resolution.
+# The four settings below reach the local backend only; Meta AI takes no size, steps or guidance.
 width = 1344
 height = 768
 steps = 4
 guidance_scale = 1.0
 # Per-Scene seeds are base_seed + scene id, so a batch is reproducible.
 base_seed = 20260813
+
+# Read only when image.backend is "meta-ai". The profile folder is the entire login: fill it once
+# with scripts/meta_login.py. It is gitignored, and the server never handles a password.
+[meta_ai]
+profile_dir = "browser-profile"
+# Sequential and unhurried: the pause held between Scene requests.
+request_delay_seconds = 8.0
+# How long one picture may take before the job gives up on it.
+timeout_seconds = 180.0
