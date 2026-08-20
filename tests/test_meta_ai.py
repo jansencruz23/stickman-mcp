@@ -235,3 +235,20 @@ def test_the_delay_survives_the_browser_closing_between_redraws(tmp_path):
         backend.close()  # exactly what illustration.redraw_scene does
 
     assert slept == [8.0], "the second redraw must still wait, even in a fresh chat thread"
+
+
+def test_the_delay_is_waited_out_before_the_browser_opens(tmp_path):
+    """A window that appears and then sits idle for eight seconds reads as broken. Wait, then open."""
+    events: list[str] = []
+
+    def open_chat() -> FakeMetaChat:
+        events.append("opened")
+        return FakeMetaChat()
+
+    backend = MetaAIBackend(open_chat, delay_seconds=8.0, sleep=lambda _: events.append("slept"))
+
+    backend.generate("scene 1", "", 4243, tmp_path / "001.png")
+    backend.close()
+    backend.generate("scene 2", "", 4244, tmp_path / "002.png")
+
+    assert events == ["opened", "slept", "opened"], "the second window must not open until the pause is over"

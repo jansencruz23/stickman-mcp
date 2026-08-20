@@ -68,8 +68,8 @@ class MetaAIBackend:
 
     def generate(self, prompt: str, negative_prompt: str, seed: int, destination: Path) -> None:
         """The seed is accepted and unused: Meta offers no way to ask for the same pixels twice."""
+        self._pace()  # waited out before the window appears, so an open browser is always a busy one
         chat = self._opened()
-        self._pace()
         write_png(destination, chat.request_image(compose_request(prompt, negative_prompt)))
 
     def close(self) -> None:
