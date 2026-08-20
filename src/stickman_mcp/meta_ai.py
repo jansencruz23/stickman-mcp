@@ -122,7 +122,7 @@ def write_png(destination: Path, data: bytes) -> None:
 # --- Everything below knows Meta's page structure, so a UI change is a one-file fix. ---
 
 MIN_IMAGE_PIXELS = 256  # avatars, icons and emoji are small; a generated picture is not
-COMPOSER_TESTID = "composer-input"
+COMPOSER = '[data-testid="composer-input"][contenteditable="true"]'
 POLL_SECONDS = 0.25
 SETTLE_SECONDS = 1.5
 LAST_CHARACTERS = 200
@@ -166,8 +166,8 @@ def ask_for_image(page: Any, prompt: str, timeout_seconds: float, sent: Sequence
 
 
 def composer(page: Any) -> Any:
-    """Meta puts its testid on a hidden textarea as well, so the composer is the one you can see."""
-    return page.get_by_test_id(COMPOSER_TESTID).filter(visible=True)
+    """Meta puts its testid on a hidden textarea too, and only the real composer is ever editable."""
+    return page.locator(COMPOSER)
 
 
 def big_images(page: Any) -> list[str]:

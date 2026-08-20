@@ -1,21 +1,29 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>Meta AI stub</title>
-<!-- Stands in for meta.ai's chat: a composer, an avatar too small to be an answer, and a
-     picture that arrives late as a blob, the way a generated image does. Offline by construction. -->
+<!-- Stands in for meta.ai's chat: a hidden textarea and the real composer sharing one testid, the
+     composer mounting late the way a hydrating page does, an avatar too small to be an answer, and a
+     picture that arrives as a blob. Offline by construction. -->
 <h1>Ask Meta AI anything</h1>
 <img id="avatar" alt="avatar" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAHUlEQVR4nGPgpBJgGDVo1KBRg0YNGjVo1KCBNwgA8/k8weObwb0AAAAASUVORK5CYII=">
 <div id="thread"></div>
-<!-- Meta ships a hidden textarea and the real composer under the same testid. Both are here. -->
-<textarea data-testid="composer-input" placeholder="Ask Meta AI..."
-          style="position:absolute;width:0;height:0;overflow:hidden;border:0;padding:0"></textarea>
-<div id="composer" data-testid="composer-input" role="textbox" contenteditable="true"></div>
+<textarea id="shadow" data-testid="composer-input" placeholder="Ask Meta AI..."
+          style="position:absolute;width:200px;height:20px;overflow:hidden;border:0;padding:0"></textarea>
 <script>
   const ANSWER = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAFoCAIAAABIUN0GAAAFk0lEQVR4nO3VQQ0AIBDAsBOAQhQjCxfsQZMK2G+zzgYAHpu8AAA+ZMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgIABA0DAgAEgYMAAEDBgAAgYMAAEDBgAAgYMAAEDBoCAAQNAwIABIGDAABAwYAAIGDAABAwYAAIGDAABAwaAgAEDQMCAASBgwAAQMGAACBgwAAQMGAACBgwAAQMGgMAFPQz2LDu6lhEAAAAASUVORK5CYII=";
-  const composer = document.getElementById("composer");
-  composer.addEventListener("keydown", (event) => {
+
+  function answer() {
+    const bytes = Uint8Array.from(atob(ANSWER), (character) => character.charCodeAt(0));
+    const picture = document.createElement("img");
+    picture.alt = "generated";
+    picture.src = URL.createObjectURL(new Blob([bytes], {type: "image/png"}));
+    document.getElementById("thread").appendChild(picture);
+  }
+
+  function submitted(event) {
     if (event.key !== "Enter") return;
     event.preventDefault();
+    const composer = event.currentTarget;
     const asked = document.createElement("p");
     asked.className = "asked";
     asked.textContent = composer.textContent;
@@ -29,12 +37,24 @@
       title.placeholder = "Conversation title";
       document.body.insertBefore(title, document.body.firstChild);
     }
-    setTimeout(() => {
-      const bytes = Uint8Array.from(atob(ANSWER), (character) => character.charCodeAt(0));
-      const picture = document.createElement("img");
-      picture.alt = "generated";
-      picture.src = URL.createObjectURL(new Blob([bytes], {type: "image/png"}));
-      document.getElementById("thread").appendChild(picture);
-    }, 250);
-  });
+    setTimeout(answer, 250);
+  }
+
+  // Mid-hydration the hidden textarea still has a box, which is how it can be picked by mistake.
+  setTimeout(() => {
+    const shadow = document.getElementById("shadow");
+    shadow.style.width = "0";
+    shadow.style.height = "0";
+  }, 300);
+
+  // The real composer mounts after the page does, so anything typing at once races it.
+  setTimeout(() => {
+    const composer = document.createElement("div");
+    composer.id = "composer";
+    composer.setAttribute("data-testid", "composer-input");
+    composer.setAttribute("role", "textbox");
+    composer.setAttribute("contenteditable", "true");
+    composer.addEventListener("keydown", submitted);
+    document.body.appendChild(composer);
+  }, 600);
 </script>
