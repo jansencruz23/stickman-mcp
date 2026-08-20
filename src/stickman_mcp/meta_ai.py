@@ -166,8 +166,8 @@ def ask_for_image(page: Any, prompt: str, timeout_seconds: float, sent: Sequence
 
 
 def composer(page: Any) -> Any:
-    """Meta grows a 'Conversation title' box once a thread exists, so the message box is named exactly."""
-    return page.get_by_role("textbox").and_(page.get_by_test_id(COMPOSER_TESTID))
+    """Meta puts its testid on a hidden textarea as well, so the composer is the one you can see."""
+    return page.get_by_test_id(COMPOSER_TESTID).filter(visible=True)
 
 
 def big_images(page: Any) -> list[str]:
