@@ -342,9 +342,10 @@ level, and the render and sampler settings. Every knob is commented in the file.
 outputs rather than by editing strings and hoping, and the committed values are the channel's
 locked identity:
 
-- **Style** — a flat 2D cartoon stickman: round cream circle heads, thin black stick limbs with
-  joint dots, bold black outlines, flat muted colour fills. It is a *coloured* look, which is why
-  `color` was removed from `style.negative_prompt`.
+- **Style** — a flat 2D cartoon stickman: round cream circle heads, plain thin black stick limbs
+  drawn as unbroken lines, bold black outlines, flat muted colour fills. It is a *coloured* look,
+  which is why `color` was removed from `style.negative_prompt`. The joint dots the tuning session
+  originally picked were dropped on 2026-08-20 after seeing them on real Scenes.
 - **Voice** — `am_puck` at `voice.speed = 1.15`.
 
 `tests/test_channel_config.py` asserts these exact values, so changing them is a deliberate
