@@ -13,7 +13,7 @@ The vocabulary below is the project's — [CONTEXT.md](../../../CONTEXT.md) defi
 
 Three switches, all set by the creator's opening message:
 
-- **Scene count.** Default 30-45 Scenes. An explicit count ("4 scenes only") wins outright.
+- **Scene count.** Default 50-100 Scenes. An explicit count ("4 scenes only") wins outright.
 - **Yolo Mode.** The word "yolo" turns off both Checkpoints, the duration offer, and the music
   question. Say once that you are in Yolo Mode and will not stop, then run to the end and report.
 - **Music.** A named track, or "no music". Unstated: ask at the render step in default mode, and
@@ -55,11 +55,14 @@ Shape of the whole: **hook, stakes, explanation in steps, payoff.** Scene 1 stat
 viewer wants answered or the surprising claim you are about to prove, and earns the next thirty
 seconds before any explaining starts. Every Scene after it leaves a reason to watch the next one.
 
-Shape of one Scene: 2-4 sentences carrying one idea, 8-15 seconds spoken. Write what should be
+Shape of one Scene: 1-2 sentences carrying one idea, 4-7 seconds spoken. Write what should be
 *said* — short sentences, plain words, symbols and abbreviations spelled out the way a voice reads
 them ("twenty per cent", not "20%").
 
-A 5-10 minute video is 30-45 Scenes. Measured on this channel's voice a Scene averages about 12
+Scenes are short because the picture changes when the Scene does, and a still held much longer than
+this reads as a slideshow. One idea per Scene, then cut.
+
+A 5-10 minute video is 50-100 Scenes. Measured on this channel's voice a Scene averages about 6
 seconds, so estimate on that at the Checkpoint; the real number arrives after synthesis.
 
 ### Image Prompts
@@ -104,7 +107,7 @@ stop again for the verdict.
 
 ### The duration rule
 
-The finished video runs `total_duration_seconds` plus one 0.4 s gap per Scene, so judge that number
+The finished video runs `total_duration_seconds` plus one 0.2 s gap per Scene, so judge that number
 rather than the narration alone. The target is 5-10 minutes; the band that needs no comment is
 **4.5-10.5 minutes**.
 

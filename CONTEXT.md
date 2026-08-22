@@ -30,11 +30,11 @@ The complete narration of a video, authored from the start as an ordered list of
 _Avoid_: transcript, story
 
 **Scene**:
-The atomic unit of a video: one Narration passage paired with one Image Prompt, shown as a single still image for roughly 8–15 seconds.
+The atomic unit of a video: one Narration passage paired with one Image Prompt, shown as a single still image for roughly 4–7 seconds.
 _Avoid_: segment, slide, cut
 
 **Narration**:
-The spoken text of one Scene, typically 2–4 sentences.
+The spoken text of one Scene, typically 1–2 sentences.
 
 **Narration Clip**:
 The synthesized audio of one Scene's Narration. Its length *defines* the Scene's duration — durations are never derived by transcribing audio.
