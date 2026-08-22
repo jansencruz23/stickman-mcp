@@ -23,8 +23,11 @@ negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signa
 [voice]
 # Locked 2026-08-16 from the voice audition.
 name = "am_puck"
-# Passed straight to Kokoro, whose scale is not linear: 1.15 measures 1.07x faster, 1.25 measures 1.18x.
-speed = 1.15
+# Passed straight to Kokoro, whose scale is not linear: 1.25 measures 1.18x faster. The 1.07x once
+# recorded for 1.15 came off a single line; the same 87 Scenes spoken both ways measure 1.10x.
+# Back to 1.0 on 2026-08-23: 1.15 was set against 8-15 second Scenes, and at 3 seconds a Scene the
+# delivery had no room to land a line before the picture cut.
+speed = 1.0
 
 [render]
 width = 1920

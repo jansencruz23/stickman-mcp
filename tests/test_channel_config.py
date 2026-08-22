@@ -21,7 +21,7 @@ def test_the_shipped_config_carries_the_locked_channel_identity():
     config = load_channel_config(SHIPPED_CONFIG)
 
     assert config.style_prefix == LOCKED_STYLE_PREFIX
-    assert (config.voice, config.voice_speed) == ("am_puck", 1.15)
+    assert (config.voice, config.voice_speed) == ("am_puck", 1.0)
     negatives = config.negative_prompt
     assert not any(word in negatives for word in ("color", "colour")), "the locked look is coloured"
     assert "stick figure animals" in negatives, "only people are stick figures"
