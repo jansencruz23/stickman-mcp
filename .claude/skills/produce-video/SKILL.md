@@ -13,7 +13,7 @@ The vocabulary below is the project's — [CONTEXT.md](../../../CONTEXT.md) defi
 
 Three switches, all set by the creator's opening message:
 
-- **Scene count.** Default 100-200 Scenes. An explicit count ("4 scenes only") wins outright.
+- **Scene count.** Default 35-70 Scenes. An explicit count ("4 scenes only") wins outright.
 - **Yolo Mode.** The word "yolo" turns off both Checkpoints, the duration offer, and the music
   question. Say once that you are in Yolo Mode and will not stop, then run to the end and report.
 - **Music.** A named track, or "no music". Unstated: ask at the render step in default mode, and
@@ -55,16 +55,17 @@ Shape of the whole: **hook, stakes, explanation in steps, payoff.** Scene 1 stat
 viewer wants answered or the surprising claim you are about to prove, and earns the next thirty
 seconds before any explaining starts. Every Scene after it leaves a reason to watch the next one.
 
-Shape of one Scene: 1-2 sentences carrying one idea, 4-7 seconds spoken. Write what should be
+Shape of one Scene: 3-4 sentences carrying one idea, 7-10 seconds spoken. Write what should be
 *said* — short sentences, plain words, symbols and abbreviations spelled out the way a voice reads
 them ("twenty per cent", not "20%").
 
-Scenes are short because the picture changes when the Scene does, and a still held much longer than
-this reads as a slideshow. One idea per Scene, then cut.
+A Scene holds one still, and these stills do not move. Channels that cut every 3-4 seconds are
+animating; cutting a static picture that fast reads as flicker rather than pace. One idea per Scene,
+held long enough to look at.
 
-Measured on this channel's voice a 1-2 sentence Scene averages about **3 seconds**, not the 6 the
-length above suggests - `am_puck` at speed 1.15 is fast. So a 5-10 minute video is **100-200
-Scenes**. Estimate on 3 seconds at the Checkpoint; the real number arrives after synthesis.
+Measured on this channel's voice, narration runs about **0.26 seconds a word**, so 7-10 seconds is
+27-38 words. A 5-10 minute video is **35-70 Scenes**. Estimate on 8.5 seconds a Scene at the
+Checkpoint; the real number arrives after synthesis.
 
 ### The outro
 
@@ -95,6 +96,35 @@ it is doing. Content only: the server prepends the channel Style Prefix and appl
 prompt to every image, which is what makes all frames of all videos one look. Style words in your
 prompt ("minimalist", "line art", "black and white", "flat vector") fight that prefix, and are the
 one reliable way to break the channel's identity.
+
+### Card Scenes
+
+A countdown or chapter screen is a Scene with `"card": true` alongside its `id`, `narration` and
+`image_prompt`. That flag does one thing: it lifts `text`, `watermark` and `signature` from the
+negative prompt, because a ranking screen exists to be read. Everything else about the channel look
+still applies.
+
+Use one to open each item of a ranked list, and describe the screen literally - the row of numbers
+in the order they appear, which one is marked, and how. Meta draws a ten-digit countdown correctly
+and spells short capitalised words like BAD and NIGHTMARE correctly, so both are safe. Sentences on
+an image are still not.
+
+The row is redrawn per card, so its hand-lettering shifts a little between them. That reads as the
+channel's look rather than a mistake, but it does mean a card is never pixel-identical to the last.
+
+Ordinary Scenes never set it. Words on a normal Scene are a mistake the negative prompt is there to
+prevent.
+
+### Animals
+
+The Style Prefix says nothing about animals, deliberately: naming them on every image had Meta
+supplying a dog and a sheep to Scenes that asked for neither. So a Scene that genuinely needs one
+carries the rule itself, pasted verbatim the way a Visual Bible entry is:
+
+> drawn as an ordinary four legged cartoon animal with a solid furry body and a real animal head
+
+Without it the stick figure treatment bleeds onto the animal and you get a beaked stick-wolf or a
+dog with a round human head. Only Scenes whose narration actually has an animal get the phrase.
 
 ### Visual Bible
 

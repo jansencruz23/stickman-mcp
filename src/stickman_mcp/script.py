@@ -16,6 +16,7 @@ class Scene:
     id: int
     narration: str
     image_prompt: str
+    card: bool = False  # a ranking or chapter screen, the one kind of Scene whose words are the point
 
 
 @dataclass(frozen=True)
@@ -49,6 +50,7 @@ def script_to_dict(script: Script) -> dict[str, Any]:
         "visual_bible": dict(script.visual_bible),
         "scenes": [
             {"id": scene.id, "narration": scene.narration, "image_prompt": scene.image_prompt}
+            | ({"card": True} if scene.card else {})
             for scene in script.scenes
         ],
     }
@@ -60,7 +62,8 @@ def with_image_prompt(script: Script, scene_id: int, image_prompt: str) -> Scrip
     if not replacement:
         raise ScriptError(f"scene {scene_id}.image_prompt must be a non-empty string.")
     scenes = tuple(
-        Scene(scene.id, scene.narration, replacement) if scene.id == scene_id else scene for scene in script.scenes
+        Scene(scene.id, scene.narration, replacement, scene.card) if scene.id == scene_id else scene
+        for scene in script.scenes
     )
     return Script(script.topic, script.title, scenes, script.visual_bible)
 
@@ -80,10 +83,14 @@ def _scene(raw: Any, position: int) -> Scene:
     if isinstance(scene_id, bool) or not isinstance(scene_id, int):
         raise ScriptError(f"scene at position {position} has a non-integer id {scene_id!r}.")
     where = f"scene {scene_id}"
+    card = raw.get("card", False)
+    if not isinstance(card, bool):
+        raise ScriptError(f"{where}.card must be true or false.")
     return Scene(
         id=scene_id,
         narration=_text(raw, "narration", where),
         image_prompt=_text(raw, "image_prompt", where),
+        card=card,
     )
 
 

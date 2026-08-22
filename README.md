@@ -129,13 +129,13 @@ Modifiers the skill listens for in that first message:
 | Say | Effect |
 | --- | --- |
 | `yolo` | Yolo Mode: no Checkpoints, no questions, straight through to the Video Package |
-| `12 scenes only` | Overrides the default 100-200 Scenes |
+| `12 scenes only` | Overrides the default 35-70 Scenes |
 | `no music` / `music calm-piano.mp3` | Skips or picks the bed, instead of being asked |
 
 Machine time for a full-length video: 8-12 minutes of narration, under a minute to render, and
 images that depend on the backend. Local SDXL draws a Scene in ~2 seconds. Meta AI holds
 `meta_ai.request_delay_seconds` (8 s) between Scenes on top of its own draw time, so at the current
-100-200 Scenes a batch is the long pole — budget an hour or more and leave it running.
+35-70 Scenes a batch is still the long pole — budget 20-40 minutes and leave it running.
 
 The rest of this file documents what each tool does, for when a Run needs driving by hand.
 

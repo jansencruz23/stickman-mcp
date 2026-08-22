@@ -10,7 +10,6 @@ LOCKED_STYLE_PREFIX = (
     "any people are drawn as stick figures with big round slightly lopsided cream circle heads, "
     "exactly two small solid black dots for eyes and one short flat black line above each eye, "
     "plain thin black stick arms and legs drawn as unbroken slightly wobbly lines, "
-    "any animals are drawn as ordinary four legged cartoon animals with solid furry bodies and real animal heads, "
     "bold uneven hand inked black outlines, flat muted colour fills, simple flat scenery, no gradients, "
     "wide 16:9 landscape composition,"
 )
@@ -27,7 +26,8 @@ def test_the_shipped_config_carries_the_locked_channel_identity():
     assert "stick figure animals" in negatives, "only people are stick figures"
     assert "clean vector art" in negatives, "the locked look is hand made, not polished"
     assert "paper texture" in negatives, "hand made means uneven lines, not a drawing on paper"
-    assert config.style_prefix.count("any ") == 2, "people and animals are described only if the Scene has them"
+    assert config.style_prefix.count("any ") == 1, "people are described only if the Scene has them"
+    assert "animal" not in config.style_prefix, "the animal rule rides on the Scenes that need it, not every image"
     assert config.style_prefix.startswith("16:9"), "the aspect clause leads, or Meta ignores it"
 
 

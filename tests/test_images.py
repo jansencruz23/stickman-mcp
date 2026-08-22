@@ -257,3 +257,17 @@ def test_run_status_carries_the_job_so_one_call_answers_where_am_i(channel, fake
     status = json.loads(stickman_get_run(run_id))
     assert status["job"]["state"] == "done"
     assert status["job"]["done"] == status["images"] == 3
+
+
+def test_a_card_scene_is_the_one_place_words_are_allowed(locked_channel):
+    """A ranking screen exists to be read, so the text bans lift for it and nothing else does."""
+    from stickman_mcp.illustration import negative_for
+    from stickman_mcp.script import Scene
+
+    ordinary = negative_for(Scene(1, "n", "p"), locked_channel)
+    card = negative_for(Scene(1, "n", "p", card=True), locked_channel)
+
+    assert "text" in ordinary.split(", ") and "text" not in card.split(", ")
+    assert "watermark" not in card.split(", ") and "signature" not in card.split(", ")
+    assert "photorealistic" in card, "a card is still the channel's look, not a free-for-all"
+    assert "stick figure animals" in card

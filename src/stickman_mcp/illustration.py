@@ -14,6 +14,9 @@ from .script import Scene, Script
 
 MAX_SEED = 2**31 - 1
 
+# Lifted for card Scenes only. Left in place they fight the very thing a ranking screen is for.
+TEXT_BANS = ("text", "watermark", "signature")
+
 
 def backend_for(config: ChannelConfig) -> ImageBackend:
     """The one place image.backend becomes a live backend, so a tuning grid draws what a Run draws."""
@@ -39,7 +42,7 @@ def generate_images(
             destination = runs.image_path(run_id, scene.id)
             if not (only_missing and destination.is_file()):
                 prompt = compose_prompt(scene, config.style_prefix)
-                draw(destination, prompt, config.negative_prompt, scene_seed(config, scene.id), backend)
+                draw(destination, prompt, negative_for(scene, config), scene_seed(config, scene.id), backend)
             yield scene.id
     finally:
         backend.close()  # one batch is one browser session, however many threads it opens inside
@@ -57,7 +60,7 @@ def redraw_scene(
     destination = runs.image_path(run_id, scene.id)
     prompt = compose_prompt(scene, config.style_prefix)
     try:
-        draw(destination, prompt, config.negative_prompt, seed, backend)
+        draw(destination, prompt, negative_for(scene, config), seed, backend)
     finally:
         backend.close()
     return destination
@@ -73,6 +76,14 @@ def draw(destination: Path, prompt: str, negative_prompt: str, seed: int, backen
     except Exception as exc:
         raise ImageError(f"the image backend failed on {destination.name}: {exc}") from None
     partial.replace(destination)
+
+
+def negative_for(scene: Scene, config: ChannelConfig) -> str:
+    """channel.toml stays the only place the negative prompt is written; a card just drops the text bans."""
+    if not scene.card:
+        return config.negative_prompt
+    kept = [term.strip() for term in config.negative_prompt.split(",") if term.strip() not in TEXT_BANS]
+    return ", ".join(kept)
 
 
 def compose_prompt(scene: Scene, style_prefix: str) -> str:
