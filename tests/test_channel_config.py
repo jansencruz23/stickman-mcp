@@ -6,10 +6,13 @@ from conftest import SHIPPED_CONFIG
 from stickman_mcp.config import ConfigError, load_channel_config
 
 LOCKED_STYLE_PREFIX = (
-    "flat 2d cartoon illustration, stick figure characters with big round cream circle heads, "
-    "simple dot eyes and thin eyebrows, plain thin black stick arms and legs drawn as unbroken lines, "
-    "bold clean black outlines, flat muted colour fills, simple cel shaded scenery, no gradients, "
-    "16:9 widescreen landscape frame,"
+    "16:9 widescreen landscape frame, much wider than it is tall, flat 2d cartoon illustration, "
+    "people drawn as stick figures with big round slightly lopsided cream circle heads, "
+    "simple uneven dot eyes and thin crooked eyebrows, "
+    "plain thin black stick arms and legs drawn as unbroken slightly wobbly lines, "
+    "animals drawn as ordinary four legged cartoon animals with solid furry bodies and real animal heads, "
+    "bold uneven hand inked black outlines, flat muted colour fills, simple flat scenery, no gradients, "
+    "wide 16:9 landscape composition,"
 )
 
 
@@ -21,6 +24,10 @@ def test_the_shipped_config_carries_the_locked_channel_identity():
     assert (config.voice, config.voice_speed) == ("am_puck", 1.15)
     negatives = config.negative_prompt
     assert not any(word in negatives for word in ("color", "colour")), "the locked look is coloured"
+    assert "stick figure animals" in negatives, "only people are stick figures"
+    assert "clean vector art" in negatives, "the locked look is hand made, not polished"
+    assert "paper texture" in negatives, "hand made means uneven lines, not a drawing on paper"
+    assert config.style_prefix.startswith("16:9"), "the aspect clause leads, or Meta ignores it"
 
 
 def test_shipped_config_loads_documented_defaults():
@@ -28,7 +35,7 @@ def test_shipped_config_loads_documented_defaults():
 
     assert config.voice
     assert config.style_prefix.strip()
-    assert config.scene_gap_seconds == 0.4
+    assert config.scene_gap_seconds == 0.2
     assert (config.width, config.height, config.fps) == (1920, 1080, 30)
 
 

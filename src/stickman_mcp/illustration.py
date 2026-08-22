@@ -7,11 +7,22 @@ from collections.abc import Iterator
 from pathlib import Path
 
 from .config import ChannelConfig
-from .images import ImageBackend, ImageError
+from .images import META_AI, ImageBackend, ImageError, SDXLLightningBackend
+from .meta_ai import MetaAIBackend, PlaywrightMetaChat
 from .runs import RunStore
 from .script import Scene, Script
 
 MAX_SEED = 2**31 - 1
+
+
+def backend_for(config: ChannelConfig) -> ImageBackend:
+    """The one place image.backend becomes a live backend, so a tuning grid draws what a Run draws."""
+    if config.image_backend == META_AI:
+        return MetaAIBackend(
+            lambda: PlaywrightMetaChat(config.meta_profile_dir, config.meta_timeout_seconds),
+            config.meta_delay_seconds,
+        )
+    return SDXLLightningBackend(config.image_width, config.image_height, config.image_steps, config.guidance_scale)
 
 
 def generate_images(

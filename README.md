@@ -129,11 +129,13 @@ Modifiers the skill listens for in that first message:
 | Say | Effect |
 | --- | --- |
 | `yolo` | Yolo Mode: no Checkpoints, no questions, straight through to the Video Package |
-| `12 scenes only` | Overrides the default 30-45 Scenes |
+| `12 scenes only` | Overrides the default 50-100 Scenes |
 | `no music` / `music calm-piano.mp3` | Skips or picks the bed, instead of being asked |
 
-A full-length video is roughly 15 minutes of machine time: 8-12 of narration, ~2 of images, and
-under a minute to render.
+Machine time for a full-length video: 8-12 minutes of narration, under a minute to render, and
+images that depend on the backend. Local SDXL draws a Scene in ~2 seconds. Meta AI holds
+`meta_ai.request_delay_seconds` (8 s) between Scenes on top of its own draw time, so at the current
+50-100 Scenes a batch is the long pole — budget roughly 20-45 minutes and leave it running.
 
 The rest of this file documents what each tool does, for when a Run needs driving by hand.
 
@@ -165,9 +167,10 @@ assets.
 
 ## Narrating a Run: the one long call
 
-On an RTX 3060 `stickman_synthesize_narration` runs at roughly **14.5 seconds per Scene**, plus
-about 30 seconds to load the model on the first call — so a full 30-45 Scene Script takes
-**8-12 minutes**. Raise the tool timeout before the first real Run (setup step 4).
+On an RTX 3060 `stickman_synthesize_narration` runs at roughly **1.2x the spoken length** of the
+Script, plus about 30 seconds to load the model on the first call — so a 5-10 minute video takes
+**8-12 minutes** whatever the Scene count. Raise the tool timeout before the first real Run
+(setup step 4).
 
 ### A timeout is not a lost Run
 
@@ -277,6 +280,13 @@ only. Meta picks its own size, so the Style Prefix asks for a **16:9 widescreen 
 in words instead: with that clause it returns 2048x1152 and fills the 1080p frame exactly, and
 without it 1920x1280, which the render pillarboxes with 150 px of white down each side.
 
+**Where the clause sits matters as much as whether it is there.** Left at the tail of a long prefix
+it was ignored on 18 of one Run's 25 Scenes, so it now both opens and closes `style.prefix`, and
+`portrait orientation, square image, tall narrow frame` sit in the negative prompt. A test asserts
+the prefix still starts with `16:9`. Check a batch with
+`ffprobe -v error -show_entries stream=width,height -of csv=p=0 images/001.png`: anything other
+than `2048,1152` will be pillarboxed.
+
 A browser window is visible for the whole batch, on purpose: this is your own session, not a hidden
 one. Leave it alone while a job runs — a stray click lands in the chat.
 
@@ -349,6 +359,16 @@ locked identity:
   a *coloured* look, which is why `color` was removed from `style.negative_prompt`. The joint dots
   the tuning session originally picked were dropped on 2026-08-20 after seeing them on real Scenes,
   and the 16:9 clause was added the same day to stop Meta's 3:2 stills being pillarboxed.
+  **Only people are stick figures** — the prefix said "stick figure characters" until 2026-08-20,
+  which drew wolves as beaked stick-men and gave dogs and cats human heads on stick limbs. Animals
+  are now named separately as ordinary four legged cartoon animals.
+  **The drawing is meant to look hand made (2026-08-22).** "Bold clean outlines" and "cel shaded"
+  gave a tidy corporate look; the prefix now asks for wobbly uneven outlines, lopsided heads, shaky
+  limbs and colour painted past the lines, and `clean vector art, smooth even line weight, ruler
+  straight lines, polished professional illustration, corporate flat design, airbrushed` moved into
+  the negative prompt. Crude is the channel's identity, not a defect to fix.
+- **Cuts** — `render.scene_gap_seconds` went 0.4 to 0.2 on 2026-08-20: at 0.4 the gap between one
+  Scene's last word and the next read as dead air rather than a beat.
 - **Voice** — `am_puck` at `voice.speed = 1.15`.
 
 `tests/test_channel_config.py` asserts these exact values, so changing them is a deliberate

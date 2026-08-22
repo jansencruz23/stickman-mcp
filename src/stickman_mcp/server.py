@@ -10,10 +10,9 @@ from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
 from .config import ChannelConfig, load_channel_config
-from .illustration import generate_images, redraw_scene, redraw_seed
-from .images import META_AI, ImageBackend, ImageError, SDXLLightningBackend
+from .illustration import backend_for, generate_images, redraw_scene, redraw_seed
+from .images import ImageBackend, ImageError
 from .jobs import RUNNING, Job
-from .meta_ai import MetaAIBackend, PlaywrightMetaChat
 from .metadata import build_metadata
 from .narration import synthesize
 from .render import RENDER_STEPS, RenderError, missing_asset_error, music_path, music_tracks, render
@@ -43,13 +42,7 @@ def tts_engine() -> TTSEngine:
 
 @lru_cache(maxsize=1)
 def image_backend() -> ImageBackend:
-    config = channel_config()
-    if config.image_backend == META_AI:
-        return MetaAIBackend(
-            lambda: PlaywrightMetaChat(config.meta_profile_dir, config.meta_timeout_seconds),
-            config.meta_delay_seconds,
-        )
-    return SDXLLightningBackend(config.image_width, config.image_height, config.image_steps, config.guidance_scale)
+    return backend_for(channel_config())
 
 
 def _runs() -> RunStore:

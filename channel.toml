@@ -8,9 +8,14 @@ music_dir = "music"
 
 [style]
 # Prepended to every Image Prompt by the server; Claude's prompts describe scene content only.
-# Locked 2026-08-16 from the style grid: a flat coloured cartoon stickman, not black-and-white line art.
-prefix = "flat 2d cartoon illustration, stick figure characters with big round cream circle heads, simple dot eyes and thin eyebrows, plain thin black stick arms and legs drawn as unbroken lines, bold clean black outlines, flat muted colour fills, simple cel shaded scenery, no gradients, 16:9 widescreen landscape frame,"
-negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signature, blurry, extra limbs, cluttered background, joint dots, visible elbow and knee joints"
+# Relocked 2026-08-22 for the crude look, on the second attempt: the wobble rides on the flat cartoon
+# rather than replacing it. "crude", "hand drawn" and "scribbled shading" all read to Meta as
+# traditional media, and drew crayon on paper; only the line-quality words may say imperfect.
+# The stick figure treatment is people only: saying "characters" gave animals human heads and stick limbs.
+# The aspect clause leads and closes the prefix: buried at the end it was ignored on 18 of 25 Scenes,
+# and Meta answers only to words here, since it takes no size parameter.
+prefix = "16:9 widescreen landscape frame, much wider than it is tall, flat 2d cartoon illustration, people drawn as stick figures with big round slightly lopsided cream circle heads, simple uneven dot eyes and thin crooked eyebrows, plain thin black stick arms and legs drawn as unbroken slightly wobbly lines, animals drawn as ordinary four legged cartoon animals with solid furry bodies and real animal heads, bold uneven hand inked black outlines, flat muted colour fills, simple flat scenery, no gradients, wide 16:9 landscape composition,"
+negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signature, blurry, extra limbs, cluttered background, joint dots, visible elbow and knee joints, stick figure animals, animals with human heads, round human head on an animal, animal standing on two stick legs, portrait orientation, square image, tall narrow frame, clean vector art, smooth even line weight, ruler straight lines, paper texture, wax crayon, pencil sketch, pencil shading, hatching, brush strokes"
 
 [voice]
 # Locked 2026-08-16 from the voice audition.
@@ -23,7 +28,8 @@ width = 1920
 height = 1080
 fps = 30
 # Silent pause held between Scenes, in both the audio track and the image timing.
-scene_gap_seconds = 0.4
+# Tightened from 0.4 on 2026-08-20: the cuts read as dead air rather than a beat.
+scene_gap_seconds = 0.2
 # Music bed level relative to the narration.
 music_level_db = -22.0
 
