@@ -129,13 +129,13 @@ Modifiers the skill listens for in that first message:
 | Say | Effect |
 | --- | --- |
 | `yolo` | Yolo Mode: no Checkpoints, no questions, straight through to the Video Package |
-| `12 scenes only` | Overrides the default 50-100 Scenes |
+| `12 scenes only` | Overrides the default 100-200 Scenes |
 | `no music` / `music calm-piano.mp3` | Skips or picks the bed, instead of being asked |
 
 Machine time for a full-length video: 8-12 minutes of narration, under a minute to render, and
 images that depend on the backend. Local SDXL draws a Scene in ~2 seconds. Meta AI holds
 `meta_ai.request_delay_seconds` (8 s) between Scenes on top of its own draw time, so at the current
-50-100 Scenes a batch is the long pole — budget roughly 20-45 minutes and leave it running.
+100-200 Scenes a batch is the long pole — budget an hour or more and leave it running.
 
 The rest of this file documents what each tool does, for when a Run needs driving by hand.
 
@@ -310,7 +310,7 @@ poll `stickman_job_status` until `state` is `done`. It writes three things into 
 folder — `subtitles.srt`, `narration.wav` (the joined narration track), and `video.mp4`.
 
 The timing rule is the whole format. Each Scene's image holds the screen for **its Narration
-Clip plus the channel `scene_gap_seconds`** (0.4 s by default), hard cuts, no motion — so the
+Clip plus the channel `scene_gap_seconds`** (0.0 s as shipped, 0.4 s if the setting is absent), hard cuts, no motion — so the
 video runs for exactly the narration plus one gap per Scene, and each cut lands on the moment
 the next Scene starts speaking. Subtitle cues use the same arithmetic, so captions can never
 drift from the picture. Nothing transcribes audio to get there
@@ -367,8 +367,10 @@ locked identity:
   limbs and colour painted past the lines, and `clean vector art, smooth even line weight, ruler
   straight lines, polished professional illustration, corporate flat design, airbrushed` moved into
   the negative prompt. Crude is the channel's identity, not a defect to fix.
-- **Cuts** — `render.scene_gap_seconds` went 0.4 to 0.2 on 2026-08-20: at 0.4 the gap between one
-  Scene's last word and the next read as dead air rather than a beat.
+- **Cuts** — `render.scene_gap_seconds` went 0.4 to 0.2 on 2026-08-20, then to 0.0 on 2026-08-23.
+  At 0.4 the gap between one Scene's last word and the next read as dead air; once Scenes were cut
+  to 4-7 seconds even 0.2 landed as a stumble mid-sentence. Kokoro leaves a breath at each clip
+  edge already, so the cuts still have air in them at zero.
 - **Voice** — `am_puck` at `voice.speed = 1.15`.
 
 `tests/test_channel_config.py` asserts these exact values, so changing them is a deliberate

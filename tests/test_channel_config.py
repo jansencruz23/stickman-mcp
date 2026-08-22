@@ -36,7 +36,7 @@ def test_shipped_config_loads_documented_defaults():
 
     assert config.voice
     assert config.style_prefix.strip()
-    assert config.scene_gap_seconds == 0.2
+    assert config.scene_gap_seconds == 0.0
     assert (config.width, config.height, config.fps) == (1920, 1080, 30)
 
 

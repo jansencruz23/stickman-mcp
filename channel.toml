@@ -31,8 +31,9 @@ width = 1920
 height = 1080
 fps = 30
 # Silent pause held between Scenes, in both the audio track and the image timing.
-# Tightened from 0.4 on 2026-08-20: the cuts read as dead air rather than a beat.
-scene_gap_seconds = 0.2
+# 0.4 to 0.2 on 2026-08-20, then to 0.0 on 2026-08-23: at 4-7 second Scenes even a fifth of a
+# second lands as a stumble between sentences, and Kokoro already leaves a breath at each clip edge.
+scene_gap_seconds = 0.0
 # Music bed level relative to the narration.
 music_level_db = -22.0
 
