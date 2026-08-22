@@ -43,10 +43,13 @@ CANDIDATES = {
     ),
 }
 
-# One subject per thing the prefix asserts: crude linework on a person, and animals staying animals.
+# One subject per thing the prefix asserts. "object" earns its place: the prefix describes how people
+# and animals look, and Meta read that as a promise they are present, staging still lifes in a meadow
+# with bystanders. A subject with neither is the only one that catches it.
 SUBJECTS = {
     "person": "a stick figure man standing at the edge of a cliff looking down at a river far below",
     "animal": "a wolf howling in a snowy forest at night",
+    "object": "a coiled length of intestine cut open on a metal tray, showing pale threads inside",
 }
 
 

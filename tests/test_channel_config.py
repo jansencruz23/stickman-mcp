@@ -7,10 +7,10 @@ from stickman_mcp.config import ConfigError, load_channel_config
 
 LOCKED_STYLE_PREFIX = (
     "16:9 widescreen landscape frame, much wider than it is tall, flat 2d cartoon illustration, "
-    "people drawn as stick figures with big round slightly lopsided cream circle heads, "
-    "simple uneven dot eyes and thin crooked eyebrows, "
+    "any people are drawn as stick figures with big round slightly lopsided cream circle heads, "
+    "exactly two small solid black dots for eyes and one short flat black line above each eye, "
     "plain thin black stick arms and legs drawn as unbroken slightly wobbly lines, "
-    "animals drawn as ordinary four legged cartoon animals with solid furry bodies and real animal heads, "
+    "any animals are drawn as ordinary four legged cartoon animals with solid furry bodies and real animal heads, "
     "bold uneven hand inked black outlines, flat muted colour fills, simple flat scenery, no gradients, "
     "wide 16:9 landscape composition,"
 )
@@ -27,6 +27,7 @@ def test_the_shipped_config_carries_the_locked_channel_identity():
     assert "stick figure animals" in negatives, "only people are stick figures"
     assert "clean vector art" in negatives, "the locked look is hand made, not polished"
     assert "paper texture" in negatives, "hand made means uneven lines, not a drawing on paper"
+    assert config.style_prefix.count("any ") == 2, "people and animals are described only if the Scene has them"
     assert config.style_prefix.startswith("16:9"), "the aspect clause leads, or Meta ignores it"
 
 

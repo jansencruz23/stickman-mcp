@@ -12,10 +12,13 @@ music_dir = "music"
 # rather than replacing it. "crude", "hand drawn" and "scribbled shading" all read to Meta as
 # traditional media, and drew crayon on paper; only the line-quality words may say imperfect.
 # The stick figure treatment is people only: saying "characters" gave animals human heads and stick limbs.
+# Both clauses say "any", because "people drawn as..." read to Meta as "there are people": an intestine
+# close-up came back in a meadow with three bystanders, a dog and a sheep watching it.
+# Eyes and eyebrows are pinned to an exact count and shape, or they drift between Scenes of one video.
 # The aspect clause leads and closes the prefix: buried at the end it was ignored on 18 of 25 Scenes,
 # and Meta answers only to words here, since it takes no size parameter.
-prefix = "16:9 widescreen landscape frame, much wider than it is tall, flat 2d cartoon illustration, people drawn as stick figures with big round slightly lopsided cream circle heads, simple uneven dot eyes and thin crooked eyebrows, plain thin black stick arms and legs drawn as unbroken slightly wobbly lines, animals drawn as ordinary four legged cartoon animals with solid furry bodies and real animal heads, bold uneven hand inked black outlines, flat muted colour fills, simple flat scenery, no gradients, wide 16:9 landscape composition,"
-negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signature, blurry, extra limbs, cluttered background, joint dots, visible elbow and knee joints, stick figure animals, animals with human heads, round human head on an animal, animal standing on two stick legs, portrait orientation, square image, tall narrow frame, clean vector art, smooth even line weight, ruler straight lines, paper texture, wax crayon, pencil sketch, pencil shading, hatching, brush strokes"
+prefix = "16:9 widescreen landscape frame, much wider than it is tall, flat 2d cartoon illustration, any people are drawn as stick figures with big round slightly lopsided cream circle heads, exactly two small solid black dots for eyes and one short flat black line above each eye, plain thin black stick arms and legs drawn as unbroken slightly wobbly lines, any animals are drawn as ordinary four legged cartoon animals with solid furry bodies and real animal heads, bold uneven hand inked black outlines, flat muted colour fills, simple flat scenery, no gradients, wide 16:9 landscape composition,"
+negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signature, blurry, extra limbs, cluttered background, joint dots, visible elbow and knee joints, stick figure animals, animals with human heads, round human head on an animal, animal standing on two stick legs, portrait orientation, square image, tall narrow frame, clean vector art, smooth even line weight, ruler straight lines, paper texture, wax crayon, pencil sketch, pencil shading, hatching, brush strokes, bystanders, onlookers, spectators, freckles, cheek dots, zigzag eyebrows, scribbled eyebrows, bushy eyebrows"
 
 [voice]
 # Locked 2026-08-16 from the voice audition.
