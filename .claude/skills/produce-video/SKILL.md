@@ -65,6 +65,24 @@ this reads as a slideshow. One idea per Scene, then cut.
 A 5-10 minute video is 50-100 Scenes. Measured on this channel's voice a Scene averages about 6
 seconds, so estimate on that at the Checkpoint; the real number arrives after synthesis.
 
+### The outro
+
+Every Script ends with the same three Scenes, so the channel signs off the same way every time.
+They are ordinary Scenes - narrated, illustrated and timed by the same tools - and they count
+towards the Scene total.
+
+1. **The callback**, written fresh each video: one sentence naming the worst thing in it.
+2. **The turn**, fixed: "Whatever your day looked like, whatever went wrong - it could be worse."
+3. **The ask**, fixed: "Subscribe. Next time, it will be."
+
+Image Prompts for Scenes 2 and 3 are fixed too: a single stick figure face front on against a plain
+flat background, resigned in 2 and shrugging in 3. It is the channel avatar, so it must not drift.
+
+The three run about 15 seconds together, which is the runtime YouTube's end screen needs. A shorter
+outro leaves nowhere to put it, because a still is held exactly as long as its Narration Clip.
+Nothing in the outro asks for on-screen words: `text` is in the negative prompt, and the subscribe
+button is YouTube's own end-screen element rather than something the image draws.
+
 ### Image Prompts
 
 The channel's [Illustrative Format](../../../CONTEXT.md): each Scene is a **standalone visual
