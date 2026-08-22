@@ -157,6 +157,7 @@ def refuse_if_blocked(page: Any, sent: Sequence[str] = ()) -> None:
 def start_thread(page: Any, home_url: str = HOME_URL) -> None:
     """A Scene never inherits a thread: with a picture already in one, Meta refines it instead of drawing."""
     page.goto(home_url)
+    refuse_if_blocked(page)  # a block here has no composer, and waiting for one only hides why
     page.wait_for_selector(COMPOSER)
 
 
