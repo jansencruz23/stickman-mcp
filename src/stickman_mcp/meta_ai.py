@@ -1,4 +1,4 @@
-"""Meta AI as an image backend: one logged-in browser, one chat thread, one Scene at a time."""
+"""Meta AI as an image backend: one logged-in browser, a fresh chat thread per Scene."""
 
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ LOGIN_SIGNS = ("log into facebook", "log in to facebook", "continue with faceboo
 
 
 class MetaChat(Protocol):
-    """One open Meta AI chat thread. It knows the page; it knows nothing about Runs or Scenes."""
+    """One open Meta AI session. It knows the page; it knows nothing about Runs or Scenes."""
 
     def request_image(self, prompt: str) -> bytes:
         """Send one prompt down the thread and return the image Meta answered with."""
@@ -52,7 +52,7 @@ class MetaChat(Protocol):
 
 
 class MetaAIBackend:
-    """Sequential requests down one chat thread. Meta takes a sentence, not a seed."""
+    """Sequential requests, each down a thread of its own. Meta takes a sentence, not a seed."""
 
     def __init__(
         self,
@@ -73,7 +73,7 @@ class MetaAIBackend:
         write_png(destination, chat.request_image(compose_request(prompt, negative_prompt)))
 
     def close(self) -> None:
-        """Called when a batch or a redraw ends, which is what makes a Run exactly one chat thread."""
+        """Called when a batch or a redraw ends, which is what keeps a Run to exactly one browser."""
         chat, self._chat = self._chat, None
         if chat is not None:
             with suppress(Exception):  # teardown must never replace the failure that caused it
@@ -154,11 +154,17 @@ def refuse_if_blocked(page: Any, sent: Sequence[str] = ()) -> None:
         raise ImageError(reason)
 
 
+def start_thread(page: Any, home_url: str = HOME_URL) -> None:
+    """A Scene never inherits a thread: with a picture already in one, Meta refines it instead of drawing."""
+    page.goto(home_url)
+    page.wait_for_selector(COMPOSER)
+
+
 def ask_for_image(page: Any, prompt: str, timeout_seconds: float, sent: Sequence[str] = ()) -> bytes:
     """One prompt into the composer, then wait for the picture, the way a person uses the page."""
     asked = [*sent, prompt]
     refuse_if_blocked(page, asked)
-    already = len(big_images(page))
+    already = big_images(page)
     box = composer(page)
     box.fill(prompt)  # fill focuses without a pointer hit test, which anything overlapping would fail
     box.press("Enter")
@@ -174,12 +180,14 @@ def big_images(page: Any) -> list[str]:
     return list(page.evaluate(BIG_IMAGES, MIN_IMAGE_PIXELS))
 
 
-def wait_for_picture(page: Any, already: int, timeout_seconds: float, sent: Sequence[str] = ()) -> str:
+def wait_for_picture(page: Any, already: Sequence[str], timeout_seconds: float, sent: Sequence[str] = ()) -> str:
+    """Waits for a picture Meta has not shown before, by source: it keeps one, so counting proves nothing."""
+    seen = set(already)
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
-        found = big_images(page)
-        if len(found) > already:
-            return settled(page, len(found), found[-1])
+        fresh = [src for src in big_images(page) if src not in seen]
+        if fresh:
+            return settled(page, seen, fresh[-1])
         refuse_if_blocked(page, sent)
         time.sleep(POLL_SECONDS)
     raise ImageError(
@@ -188,11 +196,11 @@ def wait_for_picture(page: Any, already: int, timeout_seconds: float, sent: Sequ
     )
 
 
-def settled(page: Any, count: int, src: str) -> str:
+def settled(page: Any, seen: set[str], src: str) -> str:
     """Meta swaps a preview for the finished picture, so ask again after a pause and take the newest."""
     time.sleep(SETTLE_SECONDS)
-    found = big_images(page)
-    return found[-1] if len(found) >= count else src
+    fresh = [found for found in big_images(page) if found not in seen]
+    return fresh[-1] if fresh else src
 
 
 def download(page: Any, src: str) -> bytes:
@@ -215,12 +223,14 @@ class PlaywrightMetaChat:
         self._playwright: Any = None
         self._context: Any = None
         self._page: Any = None
-        self._sent: list[str] = []
+        self._asked = False
 
     def request_image(self, prompt: str) -> bytes:
-        picture = ask_for_image(self._opened(), prompt, self.timeout_seconds, self._sent)
-        self._sent.append(prompt)
-        return picture
+        page = self._opened()
+        if self._asked:  # the launch already landed on a clean thread
+            start_thread(page)
+        self._asked = True
+        return ask_for_image(page, prompt, self.timeout_seconds)
 
     def close(self) -> None:
         if self._context is not None:

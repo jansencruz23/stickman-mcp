@@ -258,7 +258,7 @@ in that folder and the backend reuses it. Delete the folder to sign out. If the 
 job stops with an `Error:` telling you to run the script again; it never asks for a password and
 never retries into a block.
 
-**How it behaves.** Requests go one at a time down a single chat thread per Run, with
+**How it behaves.** Requests go one at a time, each in a chat thread of its own, with
 `meta_ai.request_delay_seconds` (8 s) held between Scenes. There is no CAPTCHA solving, no stealth
 plugin and no fingerprint spoofing. If Meta shows a security check, a checkpoint or a rate limit,
 the job ends in state `error` naming what Meta showed, and you deal with it in the browser yourself.

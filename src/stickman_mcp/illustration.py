@@ -42,7 +42,7 @@ def generate_images(
                 draw(destination, prompt, config.negative_prompt, scene_seed(config, scene.id), backend)
             yield scene.id
     finally:
-        backend.close()  # one batch is one browser session, so a Run's Scenes share one chat thread
+        backend.close()  # one batch is one browser session, however many threads it opens inside
 
 
 def redraw_scene(

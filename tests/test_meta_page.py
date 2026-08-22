@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from stickman_mcp.images import ImageError
-from stickman_mcp.meta_ai import ask_for_image, refuse_if_blocked
+from stickman_mcp.meta_ai import ask_for_image, refuse_if_blocked, start_thread
 
 pytestmark = pytest.mark.browser
 
@@ -77,6 +77,19 @@ def test_a_second_prompt_in_the_same_thread_still_finds_the_composer(page):
 
     assert first[:8] == b"\x89PNG\r\n\x1a\n" and second[:8] == b"\x89PNG\r\n\x1a\n"
     assert [asked.strip() for asked in page.locator(".asked").all_inner_texts()] == ["scene one", "scene two"]
+
+
+def test_each_scene_starts_a_thread_of_its_own(page):
+    """Meta refines the picture already in the thread instead of drawing the next prompt, so no Scene inherits one."""
+    _stub(page, "meta-chat.html")
+    ask_for_image(page, "scene one", TIMEOUT_SECONDS)
+
+    start_thread(page, (STUBS / "meta-chat.html").as_uri())
+
+    assert page.locator(".asked").count() == 0, "the previous Scene's thread must be gone"
+    data = ask_for_image(page, "scene two", TIMEOUT_SECONDS)
+    assert data[:8] == b"\x89PNG\r\n\x1a\n"
+    assert [asked.strip() for asked in page.locator(".asked").all_inner_texts()] == ["scene two"]
 
 
 def test_a_prompt_about_a_security_check_is_not_mistaken_for_one(page):

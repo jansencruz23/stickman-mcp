@@ -14,10 +14,15 @@
 
   function answer() {
     const bytes = Uint8Array.from(atob(ANSWER), (character) => character.charCodeAt(0));
-    const picture = document.createElement("img");
-    picture.alt = "generated";
+    // Meta keeps only the newest picture on the page, so the answer replaces its predecessor
+    // rather than joining it. Counting pictures therefore never tells you a new one arrived.
+    let picture = document.querySelector("img[alt=generated]");
+    if (!picture) {
+      picture = document.createElement("img");
+      picture.alt = "generated";
+      document.getElementById("thread").appendChild(picture);
+    }
     picture.src = URL.createObjectURL(new Blob([bytes], {type: "image/png"}));
-    document.getElementById("thread").appendChild(picture);
   }
 
   function submitted(event) {
