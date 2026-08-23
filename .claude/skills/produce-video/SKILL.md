@@ -55,7 +55,7 @@ Shape of the whole: **hook, stakes, explanation in steps, payoff.** Scene 1 stat
 viewer wants answered or the surprising claim you are about to prove, and earns the next thirty
 seconds before any explaining starts. Every Scene after it leaves a reason to watch the next one.
 
-Shape of one Scene: 3-4 sentences carrying one idea, 7-10 seconds spoken. Write what should be
+Shape of one Scene: 2-3 sentences carrying one idea, 7-10 seconds spoken. Write what should be
 *said* — short sentences, plain words, symbols and abbreviations spelled out the way a voice reads
 them ("twenty per cent", not "20%").
 
@@ -63,9 +63,10 @@ A Scene holds one still, and these stills do not move. Channels that cut every 3
 animating; cutting a static picture that fast reads as flicker rather than pace. One idea per Scene,
 held long enough to look at.
 
-Measured on this channel's voice, narration runs about **0.26 seconds a word**, so 7-10 seconds is
-27-38 words. A 5-10 minute video is **35-70 Scenes**. Estimate on 8.5 seconds a Scene at the
-Checkpoint; the real number arrives after synthesis.
+Measured across 96 Scenes and 2024 words at `am_puck` speed 1.0, narration runs **0.35 seconds a
+word**, so 7-10 seconds is **20-29 words**. A 5-10 minute video is **35-70 Scenes**, and 8-12
+minutes is 65-100. Estimate words first, not Scenes: word count times 0.35 is reliable, and a Scene
+count is not, because a card Scene runs a third as long as a content one.
 
 ### The outro
 
