@@ -43,6 +43,50 @@ CANDIDATES = {
     ),
 }
 
+CLOSING = "wide 16:9 landscape composition,"
+
+# Channel two draws creatures, which the locked prefix is deliberately silent about. Each candidate
+# below changes only the creature clause, so a difference in the grid has one cause.
+CREATURE_CLAUSES = {
+    "creature-solid": (
+        "any creature is drawn as a solid filled cartoon animal with a real animal head "
+        "and its own real anatomy,"
+    ),
+    "creature-pinned": (
+        "any creature is drawn as a solid filled cartoon animal with a real animal head, its own "
+        "real body shape and its own real number of limbs, never with a round human head, "
+        "never with thin stick legs,"
+    ),
+}
+
+# The one candidate that is not a clause swap: it drops the stick figure people entirely, to answer
+# whether channel two should look like channel one at all.
+CREATURES_NO_PEOPLE = (
+    "16:9 widescreen landscape frame, much wider than it is tall, flat 2d cartoon illustration, "
+    "any creature is drawn as a solid filled cartoon animal with a real animal head, its own real "
+    "body shape and its own real number of limbs, bold uneven hand inked black outlines, "
+    "flat muted colour fills, simple flat scenery, no gradients, " + CLOSING
+)
+
+# The four cases a creature channel actually ships: no clear body plan, a familiar silhouette,
+# a body plan that is neither furry nor four legged, and a creature sharing the frame with a person.
+CREATURE_SUBJECTS = {
+    "tapeworm": "a long flat tapeworm coiled in a pale loop on a dark surface, its hooked head end raised",
+    "dinosaur": "a tyrannosaurus standing in a fern forest, head lowered, mouth slightly open",
+    "anglerfish": "an anglerfish in black deep water, its glowing lure hanging in front of its long teeth",
+    "whale-scale": "a stick figure man standing beside an enormous blue whale, dwarfed by it, for scale",
+}
+
+
+def creature_styles(locked: str) -> dict[str, str]:
+    """The creature clause sits before the closing aspect clause, which has to stay last."""
+    styles = {"current": locked}
+    for name, clause in CREATURE_CLAUSES.items():
+        styles[name] = locked.replace(CLOSING, f"{clause} {CLOSING}")
+    styles["no-people"] = CREATURES_NO_PEOPLE
+    return styles
+
+
 # One subject per thing the prefix asserts. "object" earns its place: the prefix describes how people
 # and animals look, and Meta read that as a promise they are present, staging still lifes in a meadow
 # with bystanders. A subject with neither is the only one that catches it.
@@ -57,16 +101,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Render the channel style grid.")
     parser.add_argument("--guidance", type=float, help="override image.guidance_scale; sdxl only")
     parser.add_argument("--locked-only", action="store_true", help="draw the locked prefix and no candidates")
+    parser.add_argument("--creatures", action="store_true", help="tune channel two: creature clauses and creature subjects")
     options = parser.parse_args()
 
     config = load_channel_config()
     if options.guidance is not None:
         config = replace(config, guidance_scale=options.guidance)
-    styles = {"current": config.style_prefix}
-    if not options.locked_only:
-        styles |= CANDIDATES
+    subjects = CREATURE_SUBJECTS if options.creatures else SUBJECTS
+    if options.creatures:
+        styles = creature_styles(config.style_prefix)
+    else:
+        styles = {"current": config.style_prefix}
+        if not options.locked_only:
+            styles |= CANDIDATES
 
-    output_dir = OUTPUT_ROOT / _grid_name(config)
+    output_dir = OUTPUT_ROOT / (f"creatures-{_grid_name(config)}" if options.creatures else _grid_name(config))
     output_dir.mkdir(parents=True, exist_ok=True)
     legend = output_dir / "styles.txt"
     legend.write_text("".join(f"{name}: {prefix}\n" for name, prefix in styles.items()), encoding="utf-8")
@@ -74,7 +123,7 @@ def main() -> None:
     backend = backend_for(config)
     try:
         for style, prefix in styles.items():
-            for offset, (subject, scene) in enumerate(SUBJECTS.items()):
+            for offset, (subject, scene) in enumerate(subjects.items()):
                 destination = output_dir / f"{style}--{subject}.png"
                 # One seed per subject, shared by every style, so only the prefix varies between rows.
                 backend.generate(f"{prefix} {scene}", config.negative_prompt, config.base_seed + offset, destination)
@@ -82,7 +131,7 @@ def main() -> None:
     finally:
         backend.close()
 
-    print(f"\n{len(styles) * len(SUBJECTS)} images and {legend.name} in {output_dir}")
+    print(f"\n{len(styles) * len(subjects)} images and {legend.name} in {output_dir}")
 
 
 def _grid_name(config: ChannelConfig) -> str:
