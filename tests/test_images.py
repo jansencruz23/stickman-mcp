@@ -271,3 +271,43 @@ def test_a_card_scene_is_the_one_place_words_are_allowed(locked_channel):
     assert "watermark" not in card.split(", ") and "signature" not in card.split(", ")
     assert "photorealistic" in card, "a card is still the channel's look, not a free-for-all"
     assert "stick figure animals" in card
+
+
+def test_a_clause_rides_only_on_the_scenes_that_ask_for_it(locked_channel):
+    """Meta supplies whatever the prefix names, so an unmarked Scene must not carry a subject clause."""
+    from dataclasses import replace
+
+    from stickman_mcp.illustration import prefix_for
+    from stickman_mcp.script import Scene
+
+    creature = "any creature is drawn as a solid filled cartoon animal,"
+    channel = replace(locked_channel, clauses={"creature": creature})
+
+    assert prefix_for(Scene(1, "n", "p", clauses=("creature",)), channel).endswith(creature)
+    assert prefix_for(Scene(1, "n", "p"), channel) == channel.style_prefix
+    assert prefix_for(Scene(1, "n", "p", card=True), channel) == channel.style_prefix
+
+
+def test_a_scene_naming_a_clause_the_channel_lacks_says_so(locked_channel):
+    """A typo must stop the batch by name rather than quietly drawing 86 Scenes without the rule."""
+    from dataclasses import replace
+
+    from stickman_mcp.illustration import prefix_for
+    from stickman_mcp.script import Scene, ScriptError
+
+    channel = replace(locked_channel, clauses={"creature": "any creature is solid,"})
+    with pytest.raises(ScriptError) as failure:
+        prefix_for(Scene(4, "n", "p", clauses=("creatures",)), channel)
+    assert "creatures" in str(failure.value) and "creature" in str(failure.value)
+
+
+def test_a_channel_without_clauses_is_untouched(locked_channel):
+    """A channel may state its whole look in the prefix, and then every Scene gets exactly that."""
+    from dataclasses import replace
+
+    from stickman_mcp.illustration import prefix_for
+    from stickman_mcp.script import Scene
+
+    channel = replace(locked_channel, clauses={})
+    for scene in (Scene(1, "n", "p"), Scene(1, "n", "p", card=True)):
+        assert prefix_for(scene, channel) == channel.style_prefix

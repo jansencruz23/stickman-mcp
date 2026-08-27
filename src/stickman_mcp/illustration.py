@@ -10,7 +10,7 @@ from .config import ChannelConfig
 from .images import META_AI, ImageBackend, ImageError, SDXLLightningBackend
 from .meta_ai import MetaAIBackend, PlaywrightMetaChat
 from .runs import RunStore
-from .script import Scene, Script
+from .script import Scene, Script, ScriptError
 
 MAX_SEED = 2**31 - 1
 
@@ -41,7 +41,7 @@ def generate_images(
         for scene in script.scenes:
             destination = runs.image_path(run_id, scene.id)
             if not (only_missing and destination.is_file()):
-                prompt = compose_prompt(scene, config.style_prefix)
+                prompt = compose_prompt(scene, prefix_for(scene, config))
                 draw(destination, prompt, negative_for(scene, config), scene_seed(config, scene.id), backend)
             yield scene.id
     finally:
@@ -58,7 +58,7 @@ def redraw_scene(
 ) -> Path:
     """One Scene, one seed, same composition as the batch: a redraw differs only by seed and prompt."""
     destination = runs.image_path(run_id, scene.id)
-    prompt = compose_prompt(scene, config.style_prefix)
+    prompt = compose_prompt(scene, prefix_for(scene, config))
     try:
         draw(destination, prompt, negative_for(scene, config), seed, backend)
     finally:
@@ -84,6 +84,16 @@ def negative_for(scene: Scene, config: ChannelConfig) -> str:
         return config.negative_prompt
     kept = [term.strip() for term in config.negative_prompt.split(",") if term.strip() not in TEXT_BANS]
     return ", ".join(kept)
+
+
+def prefix_for(scene: Scene, config: ChannelConfig) -> str:
+    """Meta supplies whatever the prefix names, so a subject clause rides only on the Scenes that have one."""
+    if not scene.clauses:
+        return config.style_prefix
+    missing = [name for name in scene.clauses if name not in config.clauses]
+    if missing:
+        raise ScriptError(f"scene {scene.id} asks for {missing}; {config.source.name} offers {sorted(config.clauses)}")
+    return " ".join([config.style_prefix] + [config.clauses[name] for name in scene.clauses])
 
 
 def compose_prompt(scene: Scene, style_prefix: str) -> str:

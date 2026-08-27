@@ -1,0 +1,48 @@
+# Nature Is Trying - the second channel. Select it with STICKMAN_CHANNEL_CONFIG=channel-nature.toml.
+# The natural world is hostile to humans: deep time, deep sea, things inside you, predators.
+
+[paths]
+# Its own folder, so the two channels' Runs never share a listing.
+projects_dir = "projects-nature"
+music_dir = "music"
+
+[style]
+# The prefix states only what every Scene has: the frame, the line quality, the colour. Naming a
+# subject here makes Meta supply one - proven 2026-08-24 in both directions, a people clause putting
+# bystanders around an intestine and a creature clause putting a deer beside a man on a cliff.
+prefix = "16:9 widescreen landscape frame, much wider than it is tall, flat 2d cartoon illustration, bold uneven hand inked black outlines, flat muted colour fills, simple flat scenery, no gradients, wide 16:9 landscape composition,"
+# Channel one's animal bans are gone: here a solid four legged animal is the point, not a defect.
+negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signature, blurry, extra limbs, cluttered background, joint dots, visible elbow and knee joints, stick figure animals, animals with human heads, round human head on an animal, animal standing on two stick legs, portrait orientation, square image, tall narrow frame, clean vector art, smooth even line weight, ruler straight lines, paper texture, wax crayon, pencil sketch, pencil shading, hatching, brush strokes, bystanders, onlookers, spectators, freckles, cheek dots, zigzag eyebrows, scribbled eyebrows, bushy eyebrows"
+
+# Clauses a Scene opts into by name, never applied channel-wide. Measured 2026-08-24 on the first
+# Run: only 32 per cent of Scenes hold a person and 27 per cent hold a creature, and Meta supplies
+# whatever the prefix names - a bare wall of glacier ice came back with two hikers, a polar bear and
+# a caribou. Off by default, so a Scene nobody marked loses an anatomy rule rather than gaining a fox.
+[style.clauses]
+people = "any people are drawn as stick figures with big round slightly lopsided cream circle heads, exactly two small solid black dots for eyes and one short flat black line above each eye, plain thin black stick arms and legs drawn as unbroken slightly wobbly lines,"
+creature = "any creature is drawn as a solid filled cartoon animal with a real animal head and its own real anatomy,"
+
+[voice]
+# Same narrator as channel one on purpose: one production voice, two channels, no second audition.
+name = "am_puck"
+speed = 1.0
+
+[render]
+width = 1920
+height = 1080
+fps = 30
+scene_gap_seconds = 0.0
+music_level_db = -22.0
+
+[image]
+backend = "meta-ai"
+width = 1344
+height = 768
+steps = 4
+guidance_scale = 1.0
+base_seed = 20260824
+
+[meta_ai]
+profile_dir = "browser-profile"
+request_delay_seconds = 8.0
+timeout_seconds = 180.0

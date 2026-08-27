@@ -127,6 +127,20 @@ carries the rule itself, pasted verbatim the way a Visual Bible entry is:
 Without it the stick figure treatment bleeds onto the animal and you get a beaked stick-wolf or a
 dog with a round human head. Only Scenes whose narration actually has an animal get the phrase.
 
+### Style clauses
+
+A channel may declare named clauses in `[style.clauses]`, and a Scene opts into them by name:
+`"clauses": ["creature"]` alongside its `id`. They are off by default and that default matters.
+
+Meta supplies whatever the prefix names. A clause reading "any creature is drawn as..." put a deer
+beside a man on a cliff and a mouse beside an intestine; applied channel-wide to a prehistory video
+it gave a bare wall of glacier ice two hikers, a polar bear and a caribou. So a clause must ride only
+on the Scenes that genuinely hold that subject. Marking a Scene that has none is the mistake; leaving
+one unmarked only costs that Scene its anatomy rule.
+
+Check the channel config for which names exist. A name the channel does not offer stops the batch
+and says so, rather than drawing every Scene without the rule.
+
 ### Visual Bible
 
 Any character or setting appearing in more than one Scene earns a Visual Bible entry: a name mapped

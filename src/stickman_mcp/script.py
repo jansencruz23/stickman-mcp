@@ -17,6 +17,7 @@ class Scene:
     narration: str
     image_prompt: str
     card: bool = False  # a ranking or chapter screen, the one kind of Scene whose words are the point
+    clauses: tuple[str, ...] = ()  # style clauses this Scene needs, by name; none is the safe default
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,7 @@ def script_to_dict(script: Script) -> dict[str, Any]:
         "scenes": [
             {"id": scene.id, "narration": scene.narration, "image_prompt": scene.image_prompt}
             | ({"card": True} if scene.card else {})
+            | ({"clauses": list(scene.clauses)} if scene.clauses else {})
             for scene in script.scenes
         ],
     }
@@ -91,7 +93,16 @@ def _scene(raw: Any, position: int) -> Scene:
         narration=_text(raw, "narration", where),
         image_prompt=_text(raw, "image_prompt", where),
         card=card,
+        clauses=_clauses(raw.get("clauses", ()), where),
     )
+
+
+def _clauses(raw: Any, where: str) -> tuple[str, ...]:
+    if isinstance(raw, str) or not isinstance(raw, (list, tuple)):
+        raise ScriptError(f"{where}.clauses must be a list of clause names.")
+    if not all(isinstance(name, str) and name.strip() for name in raw):
+        raise ScriptError(f"{where}.clauses must hold non-empty strings.")
+    return tuple(name.strip() for name in raw)
 
 
 def _require_sequential_ids(scenes: tuple[Scene, ...]) -> None:

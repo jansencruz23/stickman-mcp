@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import tomllib
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,7 @@ class ChannelConfig:
     projects_dir: Path
     music_dir: Path
     style_prefix: str
+    clauses: Mapping[str, str]
     negative_prompt: str
     voice: str
     voice_speed: float
@@ -61,6 +63,7 @@ def load_channel_config(path: Path | None = None) -> ChannelConfig:
         projects_dir=_resolve(source, read.text("paths", "projects_dir", "projects")),
         music_dir=_resolve(source, read.text("paths", "music_dir", "music")),
         style_prefix=read.text("style", "prefix"),
+        clauses=read.clause_table("style", "clauses"),
         negative_prompt=read.text("style", "negative_prompt"),
         voice=read.text("voice", "name", "af_heart"),
         voice_speed=read.number("voice", "speed", 1.0, minimum=0.5),
@@ -96,6 +99,13 @@ class _Reader:
         if not isinstance(value, str) or not value.strip():
             raise self._invalid(section, key, "a non-empty string", value)
         return value.strip()
+
+    def clause_table(self, section: str, key: str) -> dict[str, str]:
+        """Clauses a Scene opts into by name. Empty is normal: a channel may state its whole look in the prefix."""
+        value = self._value(section, key, {})
+        if not isinstance(value, dict) or not all(isinstance(v, str) and v.strip() for v in value.values()):
+            raise self._invalid(section, key, "a table of non-empty strings", value)
+        return {name: text.strip() for name, text in value.items()}
 
     def choice(self, section: str, key: str, default: str, allowed: tuple[str, ...]) -> str:
         value = self._value(section, key, default)

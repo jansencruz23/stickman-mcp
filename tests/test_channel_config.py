@@ -7,11 +7,14 @@ from stickman_mcp.config import ConfigError, load_channel_config
 
 LOCKED_STYLE_PREFIX = (
     "16:9 widescreen landscape frame, much wider than it is tall, flat 2d cartoon illustration, "
-    "any people are drawn as stick figures with big round slightly lopsided cream circle heads, "
-    "exactly two small solid black dots for eyes and one short flat black line above each eye, "
-    "plain thin black stick arms and legs drawn as unbroken slightly wobbly lines, "
     "bold uneven hand inked black outlines, flat muted colour fills, simple flat scenery, no gradients, "
     "wide 16:9 landscape composition,"
+)
+
+LOCKED_PEOPLE_CLAUSE = (
+    "any people are drawn as stick figures with big round slightly lopsided cream circle heads, "
+    "exactly two small solid black dots for eyes and one short flat black line above each eye, "
+    "plain thin black stick arms and legs drawn as unbroken slightly wobbly lines,"
 )
 
 
@@ -20,13 +23,15 @@ def test_the_shipped_config_carries_the_locked_channel_identity():
     config = load_channel_config(SHIPPED_CONFIG)
 
     assert config.style_prefix == LOCKED_STYLE_PREFIX
+    assert config.clauses == {"people": LOCKED_PEOPLE_CLAUSE}
     assert (config.voice, config.voice_speed) == ("am_puck", 1.0)
     negatives = config.negative_prompt
     assert not any(word in negatives for word in ("color", "colour")), "the locked look is coloured"
     assert "stick figure animals" in negatives, "only people are stick figures"
     assert "clean vector art" in negatives, "the locked look is hand made, not polished"
     assert "paper texture" in negatives, "hand made means uneven lines, not a drawing on paper"
-    assert config.style_prefix.count("any ") == 1, "people are described only if the Scene has them"
+    assert "any " not in config.style_prefix, "a subject clause rides on its Scenes, not every image"
+    assert "people" not in config.style_prefix, "naming people here supplies them to Scenes that have none"
     assert "animal" not in config.style_prefix, "the animal rule rides on the Scenes that need it, not every image"
     assert config.style_prefix.startswith("16:9"), "the aspect clause leads, or Meta ignores it"
 

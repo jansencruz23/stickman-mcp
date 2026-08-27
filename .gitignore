@@ -16,3 +16,9 @@ browser-profile/
 # User-curated music tracks (keep the folder)
 music/*
 !music/.gitkeep
+
+# Channel two's Runs, same as projects/
+projects-nature/
+
+# Browser MCP console logs
+.playwright-mcp/
