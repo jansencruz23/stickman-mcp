@@ -61,12 +61,41 @@ them ("twenty per cent", not "20%").
 
 A Scene holds one still, and these stills do not move. Channels that cut every 3-4 seconds are
 animating; cutting a static picture that fast reads as flicker rather than pace. One idea per Scene,
-held long enough to look at.
+held long enough to look at. The intro is the exception, and it has its own rule below.
 
 Measured across 96 Scenes and 2024 words at `am_puck` speed 1.0, narration runs **0.35 seconds a
 word**, so 7-10 seconds is **20-29 words**. A 5-10 minute video is **35-70 Scenes**, and 8-12
 minutes is 65-100. Estimate words first, not Scenes: word count times 0.35 is reliable, and a Scene
 count is not, because a card Scene runs a third as long as a content one.
+
+### The intro
+
+The first thirty to forty seconds decide whether the rest is watched, so the intro is cut faster and
+staged differently from the body.
+
+**Eight to ten Scenes, four to five seconds each**, which is 11-14 words at 0.35 seconds a word. That
+is roughly twice the cutting rate of the body, and it is the one place the flicker warning above does
+not apply: nobody has settled in yet, so movement reads as pace rather than noise. The body returns
+to 7-10 seconds a Scene at the first card.
+
+**The character presents it.** About half the intro Scenes are the channel figure talking to camera -
+mouth open mid-speech, one clear gesture, seen front on and close. The other half are the ordinary
+standalone metaphors. Alternate them rather than grouping: four talking heads in a row read as one
+held frame, because a still does not move and the viewer cannot tell the cut happened.
+
+**The presenter Scenes share one standing set**, held as a Visual Bible entry and pasted verbatim
+into each of them, the same way any recurring location is. A set is what separates an intro that
+looks like a channel from one that looks like a blank slide. Channel one's is:
+
+> a warm dim records room with tall dark wooden shelves of stacked box files running back on both
+> sides, a plain wooden floor, and one desk lamp glowing off to one side
+
+It earns its place twice over here: it is visually richer than a flat background, and it is the
+literal claim the intro makes, that these stories come out of the written record. A channel whose
+intro claims something else needs a set that matches it.
+
+Presenter Scenes carry the `people` clause like any other Scene with a person in it. They also bookend
+the outro, which is already the figure front on, so the video opens and closes on the same face.
 
 ### The outro
 
@@ -92,6 +121,13 @@ The channel's [Illustrative Format](../../../CONTEXT.md): each Scene is a **stan
 metaphor** for its narration. No Scene promises visual continuity with its neighbours, so each
 prompt must stand alone.
 
+Meta declines to draw a person in visible distress, and a refusal is invisible: it answers with
+alternatives instead of a picture, which the backend can only read as a timeout after 180 seconds.
+A body under a sheet stopped one batch, a man kneeling with his head hanging stopped another.
+Collapse, unconsciousness, a hand at a throat and the like all risk it. The narration carries that
+meaning perfectly well on its own, so let the picture hold the place instead of the person - the
+empty ground, the heat shimmer, the still water - or show the figure upright and seen from behind.
+
 Describe subject, action and composition in plain nouns and verbs — what is in the frame and what
 it is doing. Content only: the server prepends the channel Style Prefix and applies the negative
 prompt to every image, which is what makes all frames of all videos one look. Style words in your
@@ -105,13 +141,17 @@ A countdown or chapter screen is a Scene with `"card": true` alongside its `id`,
 negative prompt, because a ranking screen exists to be read. Everything else about the channel look
 still applies.
 
-Use one to open each item of a ranked list, and describe the screen literally - the row of numbers
-in the order they appear, which one is marked, and how. Meta draws a ten-digit countdown correctly
-and spells short capitalised words like BAD and NIGHTMARE correctly, so both are safe. Sentences on
-an image are still not.
+Use one to open each item of a ranked list, and describe the screen literally - what is on it,
+where, and how large. Meta spells single digits and short capitalised words like BAD and NIGHTMARE
+correctly, so both are safe. Sentences on an image are still not.
 
-The row is redrawn per card, so its hand-lettering shifts a little between them. That reads as the
-channel's look rather than a mistake, but it does mean a card is never pixel-identical to the last.
+Cards in one video do not have to share a layout. Design each for its own rank: the card announcing
+number 4 can be built around the 4 alone. A row of every rank with one marked is allowed where it
+earns its place, but it is not the default, because asking Meta to index into a row is the one part
+it gets wrong - it circled the wrong digit twice in a ten-item countdown.
+
+Hand-lettering shifts a little between cards whatever the layout. That reads as the channel's look
+rather than a mistake, but it does mean no two cards are pixel-identical.
 
 Ordinary Scenes never set it. Words on a normal Scene are a mistake the negative prompt is there to
 prevent.
