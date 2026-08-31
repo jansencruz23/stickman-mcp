@@ -18,7 +18,7 @@ music/*
 !music/.gitkeep
 
 # Channel two's Runs, same as projects/
-projects-nature/
+projects-stikkky/
 
 # Browser MCP console logs
 .playwright-mcp/
