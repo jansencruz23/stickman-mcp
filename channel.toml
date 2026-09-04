@@ -30,6 +30,19 @@ negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signa
 [style.clauses]
 people = "any people are drawn as stick figures with big round slightly lopsided cream circle heads, exactly two small solid black dots for eyes and one short flat black line above each eye, plain thin black stick arms and legs drawn as unbroken slightly wobbly lines,"
 
+# Shot grammar, added 2026-09-04. A Scene names one, and only one, to say where the camera is.
+# The complaint they answer: Scenes that are each a single floating object read as random rather
+# than directed. UNPROVEN until the style probe runs - a composed layout is the recorded way to
+# lose the prefix entirely (a 2x2 panel grid came back watercolour, 2026-08-31), so these stay
+# plain camera words and never describe panels, frames or splits. Keep them short: every word here
+# competes with the aspect clause, and close shots are the ones most likely to drift off 16:9.
+shot_wide = "seen from far back, the whole setting visible across the frame, the subject small in it,"
+shot_medium = "seen from the waist up, filling the middle of the frame,"
+shot_close = "seen close, head and shoulders only, still in a wide landscape frame,"
+shot_low = "seen from low down looking up at the subject,"
+shot_high = "seen from high up looking down on the subject,"
+shot_over_shoulder = "seen from behind one figure, past their shoulder, at what they are looking at,"
+
 [voice]
 # Locked 2026-08-16 from the voice audition.
 name = "am_puck"
@@ -37,7 +50,10 @@ name = "am_puck"
 # recorded for 1.15 came off a single line; the same 87 Scenes spoken both ways measure 1.10x.
 # Back to 1.0 on 2026-08-23: 1.15 was set against 8-15 second Scenes, and at 3 seconds a Scene the
 # delivery had no room to land a line before the picture cut.
-speed = 1.0
+# To 1.15 on 2026-08-31 by request, with Scenes back at 7-10 seconds. Kokoro's scale is not linear:
+# this measures about 1.10x faster. channel_config() is lru_cached in server.py, so a running server
+# keeps the value it read first - a Run started before a restart must synthesize out of process.
+speed = 1.15
 
 [render]
 width = 1920

@@ -20,5 +20,8 @@ music/*
 # Channel two's Runs, same as projects/
 projects-stikkky/
 
+# The anime channel's Runs, same again
+projects-anime/
+
 # Browser MCP console logs
 .playwright-mcp/

@@ -1,0 +1,294 @@
+"""The narrative format: Beat Groups, the Lead, and the reference pictures they attach."""
+
+import json
+
+import pytest
+from conftest import FakeImages, finished, poll_job, write_tiny_png
+
+from stickman_mcp import server
+from stickman_mcp.script import ScriptError, beat_groups, establisher_for, parse_script
+from stickman_mcp.server import (
+    stickman_audition_lead,
+    stickman_choose_lead,
+    stickman_create_run,
+    stickman_generate_images,
+    stickman_get_run,
+    stickman_regenerate_image,
+    stickman_save_script,
+)
+
+TOPIC = "Life before AI"
+
+
+@pytest.fixture
+def story_backend(channel, monkeypatch):
+    """The image backend swapped out at the tool surface; tests read its call log back."""
+    backend = FakeImages()
+    monkeypatch.setattr(server, "image_backend", lambda: backend)
+    return backend
+
+
+@pytest.fixture
+def drawn_story(story_backend):
+    """A saved narrative Run with every Scene already drawn, which is where a Checkpoint finds it."""
+    run_id = json.loads(stickman_create_run(TOPIC))["run_id"]
+    stickman_save_script(run_id, _story())
+    stickman_generate_images(run_id)
+    poll_job(run_id, finished)
+    return run_id
+
+
+def _story(**overrides):
+    script = {
+        "topic": TOPIC,
+        "title": "Life Before AI",
+        "format": "narrative",
+        "scenes": [
+            {"id": 1, "narration": "A kitchen at dawn.", "image_prompt": "a kitchen at dawn", "establishes": True},
+            {"id": 2, "narration": "She reaches for a pen.", "image_prompt": "a hand takes a pen", "lead": True},
+            {"id": 3, "narration": "She writes it down.", "image_prompt": "writing on paper", "lead": True},
+            {"id": 4, "narration": "Outside, a street.", "image_prompt": "a wide street", "establishes": True},
+            {"id": 5, "narration": "She walks to work.", "image_prompt": "walking past shops", "lead": True},
+        ],
+    }
+    return script | overrides
+
+
+def test_format_defaults_to_illustrative_so_every_existing_script_still_parses():
+    script = parse_script(
+        {
+            "topic": TOPIC,
+            "title": "A List",
+            "scenes": [{"id": 1, "narration": "One thing.", "image_prompt": "one thing"}],
+        }
+    )
+
+    assert script.format == "illustrative"
+    assert beat_groups(script) == ()
+
+
+def test_an_unknown_format_is_refused_by_name():
+    with pytest.raises(ScriptError, match="script.format must be one of illustrative, narrative"):
+        parse_script(_story(format="cinematic"))
+
+
+def test_a_narrative_script_groups_each_establisher_with_the_scenes_that_follow_it():
+    script = parse_script(_story())
+
+    assert beat_groups(script) == ((1, 2, 3), (4, 5))
+    assert establisher_for(script, 3) == 1
+    assert establisher_for(script, 4) == 4
+    assert establisher_for(script, 5) == 4
+
+
+def test_a_narrative_script_must_open_on_an_establishing_shot():
+    scenes = _story()["scenes"]
+    scenes[0] = {k: v for k, v in scenes[0].items() if k != "establishes"}
+
+    with pytest.raises(ScriptError, match="scene 1 must set establishes"):
+        parse_script(_story(scenes=scenes))
+
+
+def test_establishes_is_refused_on_an_illustrative_script_rather_than_silently_ignored():
+    with pytest.raises(ScriptError, match="scene 1 sets establishes, which only the narrative format uses"):
+        parse_script(
+            {
+                "topic": TOPIC,
+                "title": "A List",
+                "scenes": [{"id": 1, "narration": "One.", "image_prompt": "one", "establishes": True}],
+            }
+        )
+
+
+def test_an_illustrative_script_has_no_beat_groups_even_though_it_may_carry_a_lead():
+    script = parse_script(
+        {
+            "topic": TOPIC,
+            "title": "A List",
+            "scenes": [{"id": 1, "narration": "One.", "image_prompt": "one", "lead": True}],
+        }
+    )
+
+    assert beat_groups(script) == ()
+    assert script.scenes[0].lead is True
+
+
+def test_a_saved_narrative_script_round_trips_its_format_and_scene_flags(channel):
+    run_id = json.loads(stickman_create_run(TOPIC))["run_id"]
+
+    stickman_save_script(run_id, _story())
+
+    saved = json.loads((channel.projects_dir / run_id / "script.json").read_text(encoding="utf-8"))
+    assert saved["format"] == "narrative"
+    assert saved["scenes"][0]["establishes"] is True
+    assert saved["scenes"][1]["lead"] is True
+    assert "establishes" not in saved["scenes"][1], "flags stay off the Scenes that never set them"
+
+
+def test_replacing_an_image_prompt_keeps_the_scene_flags_it_already_had(channel, drawn_story):
+    run_id = drawn_story
+
+    stickman_regenerate_image(run_id, 2, image_prompt="a hand takes a fountain pen")
+
+    saved = json.loads((channel.projects_dir / run_id / "script.json").read_text(encoding="utf-8"))
+    assert saved["scenes"][1]["lead"] is True, "a rewritten prompt must not strip the Scene's flags"
+    assert saved["scenes"][0]["establishes"] is True
+
+
+def test_regenerating_an_establisher_warns_that_its_whole_group_is_now_stale(drawn_story):
+    result = json.loads(stickman_regenerate_image(drawn_story, 1))
+
+    assert "images/002.png, images/003.png" in result["warning"], "every stale file needs its own path"
+    assert "only_missing" in result["warning"], "the warning must name the way back"
+
+
+def test_regenerating_an_ordinary_scene_warns_about_nothing(drawn_story):
+    result = json.loads(stickman_regenerate_image(drawn_story, 3))
+
+    assert "warning" not in result
+
+
+def _drawn(backend, scene_id: int):
+    """The one call that drew this Scene. Images publish by rename, so the backend sees the .part name."""
+    return next(call for call in backend.calls if call.destination.name.startswith(f"{scene_id:03d}.png"))
+
+
+def _run_with_lead(channel, has_lead: bool = True) -> str:
+    run_id = json.loads(stickman_create_run(TOPIC))["run_id"]
+    stickman_save_script(run_id, _story())
+    if has_lead:
+        write_tiny_png(channel.projects_dir / run_id / "reference" / "lead.png", 7)
+    return run_id
+
+
+def test_the_lead_sheet_rides_only_on_the_scenes_that_are_marked_for_it(channel, story_backend):
+    run_id = _run_with_lead(channel)
+
+    stickman_generate_images(run_id)
+    poll_job(run_id, finished)
+
+    lead_sheet = channel.projects_dir / run_id / "reference" / "lead.png"
+    assert lead_sheet in _drawn(story_backend, 2).references
+    assert lead_sheet in _drawn(story_backend, 5).references
+    assert lead_sheet not in _drawn(story_backend, 1).references, "an establisher nobody marked gets no Lead"
+    assert _drawn(story_backend, 4).references == (), "an unmarked Scene must attach nothing at all"
+
+
+def test_each_group_member_draws_from_its_own_establishing_shot(channel, story_backend):
+    run_id = _run_with_lead(channel)
+
+    stickman_generate_images(run_id)
+    poll_job(run_id, finished)
+
+    images = channel.projects_dir / run_id / "images"
+    assert images / "001.png" in _drawn(story_backend, 2).references
+    assert images / "001.png" in _drawn(story_backend, 3).references
+    assert images / "004.png" in _drawn(story_backend, 5).references
+    assert images / "001.png" not in _drawn(story_backend, 5).references, "groups must not bleed into each other"
+
+
+def test_an_establisher_never_references_itself(channel, story_backend):
+    run_id = _run_with_lead(channel)
+
+    stickman_generate_images(run_id)
+    poll_job(run_id, finished)
+
+    assert _drawn(story_backend, 1).references == ()
+    assert _drawn(story_backend, 4).references == ()
+
+
+def test_a_marked_scene_draws_without_the_lead_when_no_sheet_was_ever_chosen(channel, story_backend):
+    run_id = _run_with_lead(channel, has_lead=False)
+
+    stickman_generate_images(run_id)
+    poll_job(run_id, finished)
+
+    images = channel.projects_dir / run_id / "images"
+    assert _drawn(story_backend, 2).references == (images / "001.png",), "the setting still rides without a Lead"
+
+
+def test_an_illustrative_run_attaches_nothing_even_when_a_scene_claims_the_lead(channel, story_backend):
+    run_id = json.loads(stickman_create_run(TOPIC))["run_id"]
+    stickman_save_script(
+        run_id,
+        {
+            "topic": TOPIC,
+            "title": "A List",
+            "scenes": [
+                {"id": 1, "narration": "One.", "image_prompt": "one"},
+                {"id": 2, "narration": "Two.", "image_prompt": "two"},
+            ],
+        },
+    )
+
+    stickman_generate_images(run_id)
+    poll_job(run_id, finished)
+
+    assert all(call.references == () for call in story_backend.calls), "no format change, no new behaviour"
+
+
+def test_the_audition_draws_the_candidates_it_was_asked_for_into_the_reference_folder(channel, story_backend):
+    run_id = json.loads(stickman_create_run(TOPIC))["run_id"]
+
+    started = json.loads(stickman_audition_lead(run_id, "a character sheet of a woman, four angles", 3))
+    poll_job(run_id, finished)
+
+    assert (started["job"], started["total"]) == ("lead", 3)
+    drawn = sorted(path.name for path in (channel.projects_dir / run_id / "reference").glob("*.png"))
+    assert drawn == ["lead-01.png", "lead-02.png", "lead-03.png"]
+    assert json.loads(stickman_get_run(run_id))["lead_chosen"] is False
+
+
+def test_the_audition_carries_the_style_prefix_like_any_other_image(channel, story_backend):
+    run_id = json.loads(stickman_create_run(TOPIC))["run_id"]
+
+    stickman_audition_lead(run_id, "a character sheet of a woman", 1)
+    poll_job(run_id, finished)
+
+    assert story_backend.calls[0].prompt.startswith(channel.style_prefix)
+
+
+def test_choosing_a_candidate_keeps_it_as_the_lead_without_removing_the_others(channel, story_backend):
+    run_id = json.loads(stickman_create_run(TOPIC))["run_id"]
+    stickman_audition_lead(run_id, "a character sheet of a woman", 2)
+    poll_job(run_id, finished)
+    reference = channel.projects_dir / run_id / "reference"
+
+    chosen = json.loads(stickman_choose_lead(run_id, 2))
+
+    assert chosen["candidate"] == 2
+    assert (reference / "lead.png").read_bytes() == (reference / "lead-02.png").read_bytes()
+    assert (reference / "lead-01.png").is_file(), "the candidates stay, so the creator can change their mind"
+    assert json.loads(stickman_get_run(run_id))["lead_chosen"] is True
+
+
+def test_choosing_a_candidate_that_was_never_drawn_says_which_ones_were(channel, story_backend):
+    run_id = json.loads(stickman_create_run(TOPIC))["run_id"]
+    stickman_audition_lead(run_id, "a character sheet of a woman", 2)
+    poll_job(run_id, finished)
+
+    result = stickman_choose_lead(run_id, 7)
+
+    assert result.startswith("Error:")
+    assert "lead-01.png, lead-02.png" in result
+
+
+def test_an_audition_of_an_absurd_size_is_refused_before_it_spends_the_daily_allowance(channel, story_backend):
+    run_id = json.loads(stickman_create_run(TOPIC))["run_id"]
+
+    result = stickman_audition_lead(run_id, "a character sheet", 40)
+
+    assert result.startswith("Error:")
+    assert story_backend.calls == [], "nothing may be drawn when the request is refused"
+
+
+def test_a_group_member_says_so_rather_than_drawing_without_its_setting(channel, story_backend):
+    run_id = _run_with_lead(channel)
+    stickman_generate_images(run_id)
+    poll_job(run_id, finished)
+    (channel.projects_dir / run_id / "images" / "001.png").unlink()
+
+    result = stickman_regenerate_image(run_id, 3)
+
+    assert result.startswith("Error:")
+    assert "establisher 1" in result, "the creator needs to know which Scene to draw first"

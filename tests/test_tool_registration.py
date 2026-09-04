@@ -8,6 +8,8 @@ TOOLS = {
     "stickman_get_run": ["run_id"],
     "stickman_synthesize_narration": ["run_id"],
     "stickman_generate_images": ["run_id"],
+    "stickman_audition_lead": ["run_id", "sheet_prompt"],
+    "stickman_choose_lead": ["run_id", "candidate"],
     "stickman_job_status": ["run_id"],
     "stickman_regenerate_image": ["run_id", "scene_id"],
     "stickman_render_video": ["run_id"],

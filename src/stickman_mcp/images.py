@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -19,8 +20,15 @@ class ImageError(Exception):
 
 
 class ImageBackend(Protocol):
-    def generate(self, prompt: str, negative_prompt: str, seed: int, destination: Path) -> None:
-        """Draw prompt into destination as a PNG, reproducibly for a given seed where the engine has one."""
+    def generate(
+        self,
+        prompt: str,
+        negative_prompt: str,
+        seed: int,
+        destination: Path,
+        references: Sequence[Path] = (),
+    ) -> None:
+        """Draw prompt into destination as a PNG, from any references, reproducibly where seeds exist."""
 
     def close(self) -> None:
         """Release whatever this batch held open. A loaded local model is not held open by a batch."""
@@ -36,7 +44,15 @@ class SDXLLightningBackend:
         self.guidance_scale = guidance_scale
         self._pipeline: Any = None
 
-    def generate(self, prompt: str, negative_prompt: str, seed: int, destination: Path) -> None:
+    def generate(
+        self,
+        prompt: str,
+        negative_prompt: str,
+        seed: int,
+        destination: Path,
+        references: Sequence[Path] = (),
+    ) -> None:
+        """references are dropped: text-to-image SDXL has nowhere to put them, and silently is fine."""
         import torch
 
         pipeline = self._loaded()

@@ -9,13 +9,27 @@ One Topic in, one Video Package out. You write the Script, the Image Prompts and
 metadata; the `stickman_*` tools do the mechanical work and nothing else ([ADR-0002](../../../docs/adr/0002-creative-work-in-host-claude.md)).
 The vocabulary below is the project's — [CONTEXT.md](../../../CONTEXT.md) defines it.
 
+## Read the channel's doctrine first
+
+The skill holds what is true of every channel. The premise, intro, outro, cards and avatar are
+per-channel and live in `docs/channels/`, one file each - read the one for the channel this Run is
+on before writing a Scene:
+
+- [could-be-worse.md](../../../docs/channels/could-be-worse.md) - `channel.toml`, ranked countdowns
+- [stikkky.md](../../../docs/channels/stikkky.md) - `channel-stikkky.toml`, general stickman
+- [anime.md](../../../docs/channels/anime.md) - `channel-anime.toml`, stories in an anime look
+
 ## Read the request first
 
-Three switches, all set by the creator's opening message:
+Four switches, all set by the creator's opening message:
 
+- **Format.** `illustrative` (the default) or `narrative` - see [Two Formats](#two-formats). A
+  ranked list is illustrative; a story or scenario is narrative. The channel does not decide this.
 - **Scene count.** Default 35-70 Scenes. An explicit count ("4 scenes only") wins outright.
-- **Yolo Mode.** The word "yolo" turns off both Checkpoints, the duration offer, and the music
-  question. Say once that you are in Yolo Mode and will not stop, then run to the end and report.
+- **Yolo Mode.** The word "yolo" turns off all three Checkpoints, the duration offer, and the music
+  question. Say once that you are in Yolo Mode and will not stop, then run to the end and report. On
+  a narrative Run it takes the first Lead candidate unseen, which is the expensive thing to get
+  wrong at roughly twenty one images a day — worth saying out loud when the creator asks for both.
 - **Music.** A named track, or "no music". Unstated: ask at the render step in default mode, and
   render without music in Yolo Mode.
 
@@ -24,23 +38,25 @@ Three switches, all set by the creator's opening message:
 1. **Create.** `stickman_create_run(topic)` returns the run id every later call takes.
 2. **Write the Script** — see [Writing the Script](#writing-the-script). Done when every Scene has
    narration and an Image Prompt, and Scene 1 hooks.
-3. **Script Approval Checkpoint** — see [The two Checkpoints](#the-two-checkpoints). Skipped in
-   Yolo Mode.
+3. **Script Approval Checkpoint** — see [The Checkpoints](#the-checkpoints). Skipped in Yolo Mode.
 4. **Save.** `stickman_save_script(run_id, script)`. It validates; a returned `Error:` names what to
    fix. Heed a `warning` about stale assets — it means clips or images on disk no longer match.
-5. **Narrate.** `stickman_synthesize_narration(run_id)`. One synchronous call that takes minutes for
+5. **Audition the Lead** — narrative Runs with a recurring character only; skip it entirely
+   otherwise. `stickman_audition_lead(run_id, sheet_prompt)` starts a background job, polled like
+   the image job. Then the **Lead Audition Checkpoint**, and `stickman_choose_lead(run_id, n)`.
+   In Yolo Mode, choose candidate 1 without stopping.
+6. **Narrate.** `stickman_synthesize_narration(run_id)`. One synchronous call that takes minutes for
    a full Script; Claude Code backgrounds it after two and the session stays usable. Then apply the
    [duration rule](#the-duration-rule).
-6. **Illustrate.** `stickman_generate_images(run_id)` starts a background job and returns at once.
+7. **Illustrate.** `stickman_generate_images(run_id)` starts a background job and returns at once.
    Poll `stickman_job_status(run_id)` until `state` leaves `running` — `done` moves on, `error`
    carries the failure and sends you to [When a stage stops](#when-a-stage-stops).
-7. **Image Review Checkpoint** — see [The two Checkpoints](#the-two-checkpoints). Skipped in Yolo
-   Mode.
-8. **Render.** `stickman_render_video(run_id, music_track)` — another background job, polled the
+8. **Image Review Checkpoint** — see [The Checkpoints](#the-checkpoints). Skipped in Yolo Mode.
+9. **Render.** `stickman_render_video(run_id, music_track)` — another background job, polled the
    same way. For music, `stickman_list_music()` lists the curated folder and the track is passed by
    file name.
-9. **Metadata** — see [Writing the metadata](#writing-the-metadata).
-10. **Hand over.** Give the three paths: `video.mp4`, `subtitles.srt`, `metadata.txt`. Remind the
+10. **Metadata** — see [Writing the metadata](#writing-the-metadata).
+11. **Hand over.** Give the three paths: `video.mp4`, `subtitles.srt`, `metadata.txt`. Remind the
     creator to tick YouTube's altered-or-synthetic-content declaration when they upload.
 
 ## Writing the Script
@@ -70,13 +86,17 @@ count is not, because a card Scene runs a third as long as a content one.
 
 ### The intro
 
-The first thirty to forty seconds decide whether the rest is watched, so the intro is cut faster and
-staged differently from the body.
+Illustrative Runs only - a narrative Run cold opens instead, see
+[The narrative intro is a cold open](#the-narrative-intro-is-a-cold-open).
 
-**Eight to ten Scenes, four to five seconds each**, which is 11-14 words at 0.35 seconds a word. That
-is roughly twice the cutting rate of the body, and it is the one place the flicker warning above does
-not apply: nobody has settled in yet, so movement reads as pace rather than noise. The body returns
-to 7-10 seconds a Scene at the first card.
+The opening decides whether the rest is watched, so the intro is cut faster and staged differently
+from the body. **How long, and over how many Scenes, is a channel decision** - the doctrine file
+gives the number, and they differ: one channel runs thirty to forty seconds, another ten to fifteen.
+
+Whatever the length, the intro is cut at roughly **twice the rate of the body**, four to five
+seconds a Scene, which is 11-14 words at 0.35 seconds a word. It is the one place the flicker
+warning above does not apply: nobody has settled in yet, so movement reads as pace rather than
+noise. The body returns to 7-10 seconds a Scene.
 
 **The character presents it.** About half the intro Scenes are the channel figure talking to camera -
 mouth open mid-speech, one clear gesture, seen front on and close. The other half are the ordinary
@@ -85,30 +105,26 @@ held frame, because a still does not move and the viewer cannot tell the cut hap
 
 **The presenter Scenes share one standing set**, held as a Visual Bible entry and pasted verbatim
 into each of them, the same way any recurring location is. A set is what separates an intro that
-looks like a channel from one that looks like a blank slide. Channel one's is:
-
-> a warm dim records room with tall dark wooden shelves of stacked box files running back on both
-> sides, a plain wooden floor, and one desk lamp glowing off to one side
-
-It earns its place twice over here: it is visually richer than a flat background, and it is the
-literal claim the intro makes, that these stories come out of the written record. A channel whose
-intro claims something else needs a set that matches it.
+looks like a channel from one that looks like a blank slide, and it should be the literal claim the
+intro makes. Each channel's own set is in its doctrine file.
 
 Presenter Scenes carry the `people` clause like any other Scene with a person in it. They also bookend
 the outro, which is already the figure front on, so the video opens and closes on the same face.
 
 ### The outro
 
-Every Script ends with the same three Scenes, so the channel signs off the same way every time.
+A channel with a sign-off ends every Script on the same three Scenes, so it signs off the same way
+every time. The lines are in the doctrine file; a channel without them yet needs them written before
+its first upload.
 They are ordinary Scenes - narrated, illustrated and timed by the same tools - and they count
 towards the Scene total.
 
 1. **The callback**, written fresh each video: one sentence naming the worst thing in it.
-2. **The turn**, fixed: "Whatever your day looked like, whatever went wrong - it could be worse."
-3. **The ask**, fixed: "Subscribe. Next time, it will be."
+2. **The turn**, fixed wording per channel.
+3. **The ask**, fixed wording per channel.
 
-Image Prompts for Scenes 2 and 3 are fixed too: a single stick figure face front on against a plain
-flat background, resigned in 2 and shrugging in 3. It is the channel avatar, so it must not drift.
+The exact lines and the avatar prompts for Scenes 2 and 3 are in the channel's doctrine file. They
+are fixed for a reason: that figure is the channel avatar and it must not drift.
 
 The three run about 15 seconds together, which is the runtime YouTube's end screen needs. A shorter
 outro leaves nowhere to put it, because a still is held exactly as long as its Narration Clip.
@@ -117,9 +133,12 @@ button is YouTube's own end-screen element rather than something the image draws
 
 ### Image Prompts
 
-The channel's [Illustrative Format](../../../CONTEXT.md): each Scene is a **standalone visual
-metaphor** for its narration. No Scene promises visual continuity with its neighbours, so each
-prompt must stand alone.
+In the [Illustrative Format](../../../CONTEXT.md) each Scene is a **standalone visual metaphor** for
+its narration: no Scene promises visual continuity with its neighbours, so each prompt must stand
+alone. In the narrative format that holds only across a Beat Group boundary - inside a group the
+Scenes share a setting and are drawn from its establisher.
+
+Everything below applies to both.
 
 Meta declines to draw a person in visible distress, and a refusal is invisible: it answers with
 alternatives instead of a picture, which the backend can only read as a timeout after 180 seconds.
@@ -188,14 +207,112 @@ to one canonical line of description. Paste that line **verbatim** into every Im
 mentions it — the server does not expand entries for you, and paraphrasing is what makes a recurring
 character drift between Scenes.
 
-## The two Checkpoints
+## Two Formats
 
-Both are hard stops: end the message, wait for the creator, do nothing else until they answer.
+A Script declares one, and it is a decision about the *content*, not about the channel. Any channel
+produces either.
+
+**Illustrative** (`"format": "illustrative"`, the default) - each Scene a standalone visual metaphor
+for its narration, nothing carried between them. The right shape for a ranked list, because ten
+items genuinely are unrelated and pretending otherwise costs continuity you cannot deliver.
+
+**Narrative** (`"format": "narrative"`) - the shape a story or scenario takes. Scenes run in **Beat
+Groups**, and the rules below apply on top of everything else in this skill.
+
+### The narrative intro is a cold open
+
+A narrative Run has no intro section in the sense above: no presenter to camera, no standing set, no
+stated question. The story starts at Scene 1, in scene, and the hook is a narrative moment. A story
+that opens by cutting to a narrator explaining that a story is coming is fighting itself.
+
+That makes the intro rule per *Format* first and per channel second: a channel's doctrine file gives
+its intro length for illustrative Runs, and a narrative Run on the same channel ignores it.
+
+### Beat Groups
+
+A Beat Group is 3-6 consecutive Scenes sharing one setting. The first Scene of each group sets
+`"establishes": true` and is its **Establishing Shot**; every Scene after it belongs to that group
+until the next establisher. Scene 1 must set it, or the Script is refused.
+
+Write the establisher as the wide shot that shows the space, then the Scenes after it as closer
+looks *inside* that space. The server attaches the establisher's finished picture to each of them,
+so they are drawn from it rather than described into matching it
+([ADR-0003](../../../docs/adr/0003-reference-images-make-scenes-order-dependent.md)).
+
+**The cut between two groups is deliberate.** Continuity is promised inside a group and nowhere
+else, which is what makes this achievable at all - Meta has no seed, and holding one setting across
+forty Scenes is not something it can do. Three to six is the working range; a group of twelve is a
+group that has stopped being one.
+
+**Regenerating an establisher makes its whole group stale.** The tool returns a `warning` naming the
+Scenes drawn from the old setting. They are still on disk and still fine on their own - delete the
+files it names and re-run `stickman_generate_images` with `only_missing`, or the video mixes two
+versions of one room.
+
+### The Lead
+
+A narrative Run's recurring character. Give it a Visual Bible entry like any recurring subject, and
+then a picture as well:
+
+1. `stickman_audition_lead(run_id, sheet_prompt)` draws candidates. Ask for a **character sheet** -
+   several angles and two or three expressions in one image - not a single pose. One image is one
+   attachment and one unit of the daily allowance, and the angles are what Meta otherwise invents.
+2. Show them at the **Lead Audition Checkpoint** and stop.
+3. `stickman_choose_lead(run_id, n)` on the answer.
+
+Then mark `"lead": true` on **only** the Scenes that actually hold the character. This is the same
+rule as a style clause and it matters more here: an attached picture is a stronger instruction than
+a phrase, so marking a Scene that has no person is how the Lead ends up in an empty street. Leaving
+a Scene unmarked only costs that Scene its reference.
+
+One Lead per Run. A second character is a second attachment and is not built.
+
+### Acting, in a picture that does not move
+
+A still cannot act, so the acting is carried two ways. **Name the expression and the body language**
+in the Image Prompt - not "she is upset" but what the frame shows. And **give a reaction its own
+Scene**: three shots where an explainer would use one.
+
+That second one bends the pacing rule and only that far. A reaction Scene runs 3-5 seconds because
+it carries three or four words. It is not licence to deliver a full sentence fast - at 3 seconds a
+Scene with a whole line in it, the delivery has no room to land before the picture cuts, which is
+the failure that set the 7-10 second default in the first place.
+
+### Cards in a narrative Run
+
+Cards stay, and stop being ranks. A card is a time or chapter marker - `2019`, `THREE YEARS LATER`,
+`THE NIGHT IT CHANGED`. Same `"card": true`, same `plain_card` clause where the channel has one,
+same rule that short capitalised words are safe and sentences are not.
+
+## Shot grammar
+
+Every channel offers six shot clauses, and a Scene opts into **one**:
+
+`shot_wide`, `shot_medium`, `shot_close`, `shot_low`, `shot_high`, `shot_over_shoulder`.
+
+They exist because a run of Scenes that are each a single object floating in space reads as random
+rather than directed. Naming where the camera is turns a list of pictures into a sequence, and it
+does that on any channel and either format - a countdown benefits as much as a story.
+
+Two limits. **One shot clause per Scene**: they contradict each other, and Meta obeys the last thing
+it read. And **nothing beyond these six** - no panels, no split screens, no frames within frames. A
+composed layout is the recorded way to lose the channel look outright, and the words in these
+clauses were chosen to stay plain camera language for exactly that reason.
+
+## The Checkpoints
+
+Three exist, and all are hard stops: end the message, wait for the creator, do nothing else until
+they answer. The Lead Audition happens only on a narrative Run that has a Lead.
 
 **Script Approval** — before anything is saved or synthesized, so a rejected Script costs no GPU
 time. Show the title, the Visual Bible, and every Scene in order with its id, narration and Image
 Prompt. Give the estimated duration. Then stop. Edits mean revising and showing the changed Scenes
 again, still before saving.
+
+**Lead Audition** — after `stickman_audition_lead` finishes, before narration. Name the Run's
+`reference/` folder, note the candidates are `lead-01.png`, `lead-02.png`, ... and stop. On the
+answer, call `stickman_choose_lead`. Redrawing the set is another `stickman_audition_lead` call,
+which costs the allowance again — say so before offering it.
 
 **Image Review** — after the images job finishes. Name the Run's `images/` folder so the creator can
 open it, note that files are `001.png`, `002.png`, ... by Scene id, and offer regeneration. Then

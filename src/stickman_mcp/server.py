@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from functools import lru_cache
 from typing import Any
 
@@ -10,7 +11,13 @@ from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
 from .config import ChannelConfig, load_channel_config
-from .illustration import backend_for, generate_images, redraw_scene, redraw_seed
+from .illustration import (
+    audition_lead,
+    backend_for,
+    generate_images,
+    redraw_scene,
+    redraw_seed,
+)
 from .images import ImageBackend, ImageError
 from .jobs import RUNNING, Job
 from .metadata import build_metadata
@@ -20,6 +27,7 @@ from .runs import RunStore
 from .script import (
     Script,
     ScriptError,
+    group_of,
     image_prompts_changed,
     narration_changed,
     parse_script,
@@ -28,6 +36,8 @@ from .script import (
 from .tts import KokoroEngine, TTSEngine, TTSError
 
 server = MCPServer("stickman_mcp", version="0.1.0")
+
+MAX_CANDIDATES = 8  # one audition must not swallow a day of the roughly twenty one images Meta allows
 
 
 @lru_cache(maxsize=1)
@@ -276,6 +286,78 @@ def stickman_generate_images(run_id: str, only_missing: bool = False) -> str:
 
 
 @server.tool(
+    name="stickman_audition_lead",
+    annotations=ToolAnnotations(title="Audition Lead", read_only_hint=False, idempotent_hint=False),
+)
+def stickman_audition_lead(run_id: str, sheet_prompt: str, candidates: int = 4) -> str:
+    """Draw Lead candidates for the creator to pick between; returns at once, so poll for progress.
+
+    The Lead is the Run's recurring character, and its chosen sheet is attached to every Scene
+    marked "lead". Ask for a character sheet rather than a single pose: several angles and two or
+    three expressions in one image, so it stays one attachment and Meta has the angles it would
+    otherwise invent. The channel Style Prefix and negative prompt are applied here as for any Scene.
+
+    Args:
+        run_id: The Run returned by stickman_create_run.
+        sheet_prompt: The character and the sheet layout, in scene content terms; no style words.
+        candidates: How many to draw, 1 to 8. Each costs one image of the daily allowance.
+
+    Returns:
+        JSON: {"run_id": str, "job": "lead", "state": "running", "done": 0, "total": int,
+        "resume": str}. Poll stickman_job_status until state is done, then show the Run's
+        reference/ folder at the Lead Audition Checkpoint and call stickman_choose_lead.
+        On failure an "Error: ..." string naming the tool that fixes it.
+    """
+    runs = _runs()
+    if not runs.exists(run_id):
+        return _unknown_run(run_id)
+    if not sheet_prompt.strip():
+        return _error("sheet_prompt must describe the character and the sheet layout. Nothing was drawn.")
+    if not 1 <= candidates <= MAX_CANDIDATES:
+        return _error(f"candidates must be between 1 and {MAX_CANDIDATES}; got {candidates}.")
+    job = _job(runs, run_id)
+    running = _already_running(job, run_id)
+    if running:
+        return running
+    config, backend = channel_config(), image_backend()
+    started = job.start(
+        "lead",
+        candidates,
+        lambda: audition_lead(runs, run_id, sheet_prompt.strip(), candidates, backend, config),
+        resume="Call stickman_audition_lead again; it redraws every candidate.",
+    )
+    return _ok({"run_id": run_id, **started})
+
+
+@server.tool(
+    name="stickman_choose_lead",
+    annotations=ToolAnnotations(title="Choose Lead", read_only_hint=False, idempotent_hint=True),
+)
+def stickman_choose_lead(run_id: str, candidate: int) -> str:
+    """Settle the Lead Audition Checkpoint on one candidate, which every marked Scene then draws from.
+
+    Copies rather than renames, so the candidates stay on disk and the creator can change their mind.
+
+    Args:
+        run_id: The Run returned by stickman_create_run.
+        candidate: Which candidate to keep, numbered as its file is in the Run's reference/ folder.
+
+    Returns:
+        JSON: {"run_id": str, "candidate": int, "lead": str}.
+        On failure an "Error: ..." string naming the tool that fixes it.
+    """
+    runs = _runs()
+    if not runs.exists(run_id):
+        return _unknown_run(run_id)
+    source = runs.lead_candidate_path(run_id, candidate)
+    if not source.is_file():
+        drawn = ", ".join(path.name for path in runs.lead_candidates(run_id)) or "none"
+        return _error(f"Run '{run_id}' has no Lead candidate {candidate}; it has {drawn}.")
+    shutil.copyfile(source, runs.lead_path(run_id))
+    return _ok({"run_id": run_id, "candidate": candidate, "lead": str(runs.lead_path(run_id))})
+
+
+@server.tool(
     name="stickman_render_video",
     annotations=ToolAnnotations(title="Render Video", read_only_hint=False, idempotent_hint=True),
 )
@@ -444,18 +526,32 @@ def stickman_regenerate_image(
     scene = script.scenes[scene_id - 1]
     chosen = redraw_seed(config, scene_id, seed)
     try:
-        destination = redraw_scene(runs, run_id, scene, image_backend(), config, chosen)
+        destination = redraw_scene(runs, run_id, scene, image_backend(), config, chosen, script)
     except ImageError as exc:
         return _error(f"{exc}. The Script keeps the Image Prompt; call stickman_regenerate_image to try again.")
-    return _ok(
-        {
-            "run_id": run_id,
-            "scene_id": scene_id,
-            "seed": chosen,
-            "image": str(destination),
-            "image_prompt": scene.image_prompt,
-            "script_updated": image_prompt is not None,
-        }
+    payload: dict[str, Any] = {
+        "run_id": run_id,
+        "scene_id": scene_id,
+        "seed": chosen,
+        "image": str(destination),
+        "image_prompt": scene.image_prompt,
+        "script_updated": image_prompt is not None,
+    }
+    group_warning = _group_warning(runs, run_id, script, scene_id)
+    if group_warning:
+        payload["warning"] = group_warning
+    return _ok(payload)
+
+
+def _group_warning(runs: RunStore, run_id: str, script: Script, scene_id: int) -> str | None:
+    """A redrawn establisher leaves its group referencing a setting that no longer exists."""
+    drawn_from_it = group_of(script, scene_id)
+    if not drawn_from_it:
+        return None
+    stale = ", ".join(f"images/{runs.image_path(run_id, member).name}" for member in drawn_from_it)
+    return (
+        f"Scene {scene_id} establishes a Beat Group, so the new setting no longer matches the "
+        f"Scene(s) drawn from it. Delete {stale} and call stickman_generate_images with only_missing set."
     )
 
 

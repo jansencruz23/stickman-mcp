@@ -21,11 +21,34 @@ negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signa
 [style.clauses]
 people = "any people are drawn as stick figures with big round slightly lopsided cream circle heads, exactly two small solid black dots for eyes and one short flat black line above each eye, plain thin black stick arms and legs drawn as unbroken slightly wobbly lines,"
 creature = "any creature is drawn as a solid filled cartoon animal with a real animal head and its own real anatomy,"
+# Added 2026-09-01 for the sleep deprivation Run: the Scenes where the subject is hallucinating warp
+# on a rule rather than per prompt, so the back half of a video escalates without the look drifting.
+hallucination = "the frame is warped by exhaustion, the horizon tilted well off level, the colours drained to sickly green and grey, and one ordinary object in the scene drawn far too large for everything around it,"
+# Added 2026-09-01 after DAY 1 came back standing in a meadow with flowers and clouds. The base
+# prefix promises "simple flat scenery" and a card is the one Scene that must have none, so the
+# counterweight has to name what is banned - the same fix shape as the ocean Run's depth clauses.
+# Every card Scene carries it, or eleven cards invent eleven different backgrounds.
+plain_card = "the whole frame behind the lettering is one flat empty background colour, no ground, no grass, no plants, no flowers, no bushes, no hills, no sky, no clouds, no horizon line, no scenery of any kind,"
+
+# Shot grammar, added 2026-09-04. A Scene names one, and only one, to say where the camera is.
+# The complaint they answer: Scenes that are each a single floating object read as random rather
+# than directed. UNPROVEN until the style probe runs - a composed layout is the recorded way to
+# lose the prefix entirely (a 2x2 panel grid came back watercolour, 2026-08-31), so these stay
+# plain camera words and never describe panels, frames or splits. Keep them short: every word here
+# competes with the aspect clause, and close shots are the ones most likely to drift off 16:9.
+shot_wide = "seen from far back, the whole setting visible across the frame, the subject small in it,"
+shot_medium = "seen from the waist up, filling the middle of the frame,"
+shot_close = "seen close, head and shoulders only, still in a wide landscape frame,"
+shot_low = "seen from low down looking up at the subject,"
+shot_high = "seen from high up looking down on the subject,"
+shot_over_shoulder = "seen from behind one figure, past their shoulder, at what they are looking at,"
 
 [voice]
 # Same narrator as channel one on purpose: one production voice, two channels, no second audition.
 name = "am_puck"
-speed = 1.0
+# 1.0 to 1.15 on 2026-09-01 by request, matching channel one. Kokoro's scale is not linear: this
+# measures about 1.10x faster. Narration is also levelled up 1.5x after synthesis, out of process.
+speed = 1.15
 
 [render]
 width = 1920

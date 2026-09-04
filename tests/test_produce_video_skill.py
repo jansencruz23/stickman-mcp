@@ -53,3 +53,17 @@ def test_every_document_the_skill_points_at_is_where_it_says_it_is():
     assert relative, "the skill points at no documents"
     for target in relative:
         assert (SKILL.parent / target).exists(), f"{target} does not exist"
+
+
+HEADING = re.compile(r"^#+ (.+)$", re.MULTILINE)
+ANCHOR_LINK = re.compile(r"\]\((#[^)]+)\)")
+
+
+def test_every_section_the_skill_points_at_within_itself_exists():
+    """A renamed heading breaks a cross-reference silently, and the skill leans on them to stay short."""
+    text = SKILL.read_text(encoding="utf-8")
+    headings = {"#" + re.sub(r"[^a-z0-9 -]", "", name.lower()).replace(" ", "-") for name in HEADING.findall(text)}
+
+    missing = sorted(set(ANCHOR_LINK.findall(text)) - headings)
+
+    assert not missing, f"the skill points at sections it does not have: {missing}"

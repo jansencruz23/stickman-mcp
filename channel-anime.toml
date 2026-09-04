@@ -1,0 +1,62 @@
+# The third channel. Select it with STICKMAN_CHANNEL_CONFIG=channel-anime.toml.
+# Stories and scenarios in an anime look, told in the narrative format. Its doctrine is in
+# docs/channels/anime.md; this file holds only what the server reads.
+#
+# NOT YET USABLE. The style prefix and negative prompt below are placeholders, and the probe in
+# docs/channels/anime.md has to run before either is written for real. Nobody has ever asked Meta
+# for anime: every recorded style experiment stayed inside the crude-cartoon family, and the two
+# stickman channels ban "clean vector art" and "smooth even line weight", which is close to a
+# description of what anime is. So this negative prompt is built from scratch rather than copied.
+
+[paths]
+projects_dir = "projects-anime"
+music_dir = "music"
+
+[style]
+# PLACEHOLDER. Only the aspect clause is carried over, and only because it is measured: Meta takes
+# no size argument and answers in words, and buried at the end the clause was ignored on 18 of 25
+# Scenes, so it leads and closes whatever replaces this line.
+prefix = "16:9 widescreen landscape frame, much wider than it is tall, anime illustration, wide 16:9 landscape composition,"
+# PLACEHOLDER. Deliberately short: the stickman channels' list bans the anime look itself. Rebuild
+# this from what the probe actually returns, not from what the other two channels ban.
+negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signature, blurry, extra limbs, portrait orientation, square image, tall narrow frame"
+
+# Same opt-in rule as every channel: a clause rides on the Scenes that need it, never channel-wide.
+# The shot grammar is shared with the stickman channels, so a Scene reads the same on any of them.
+# UNPROVEN here as on the other two: a composed layout is the recorded way to lose the prefix
+# outright, so each shot word needs the probe before it is trusted. Record findings beside it.
+[style.clauses]
+shot_wide = "seen from far back, the whole setting visible across the frame, the subject small in it,"
+shot_medium = "seen from the waist up, filling the middle of the frame,"
+shot_close = "seen close, head and shoulders only, still in a wide landscape frame,"
+shot_low = "seen from low down looking up at the subject,"
+shot_high = "seen from high up looking down on the subject,"
+shot_over_shoulder = "seen from behind one figure, past their shoulder, at what they are looking at,"
+plain_card = "the whole frame behind the lettering is one flat empty background colour, no ground, no grass, no plants, no flowers, no bushes, no hills, no sky, no clouds, no horizon line, no scenery of any kind,"
+
+[voice]
+# One production voice across all three channels, so a new channel needs no second audition.
+name = "am_puck"
+speed = 1.15
+
+[render]
+width = 1920
+height = 1080
+fps = 30
+scene_gap_seconds = 0.0
+music_level_db = -22.0
+
+[image]
+backend = "meta-ai"
+width = 1344
+height = 768
+steps = 4
+guidance_scale = 1.0
+base_seed = 20260904
+
+# The same Meta account as the other two channels, by decision: one Run a day across all of them,
+# so a third channel makes no new claim on the roughly twenty one images a day the account allows.
+[meta_ai]
+profile_dir = "browser-profile"
+request_delay_seconds = 8.0
+timeout_seconds = 180.0

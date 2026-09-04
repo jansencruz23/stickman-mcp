@@ -7,6 +7,8 @@
 <h1>Ask Meta AI anything</h1>
 <img id="avatar" alt="avatar" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAHUlEQVR4nGPgpBJgGDVo1KBRg0YNGjVo1KCBNwgA8/k8weObwb0AAAAASUVORK5CYII=">
 <div id="thread"></div>
+<!-- Meta hides its upload behind a button; the input underneath is what takes the files. -->
+<input id="upload" type="file" multiple style="display:none">
 <textarea id="shadow" data-testid="composer-input" placeholder="Ask Meta AI..."
           style="position:absolute;width:200px;height:20px;overflow:hidden;border:0;padding:0"></textarea>
 <script>
@@ -24,6 +26,16 @@
     }
     picture.src = URL.createObjectURL(new Blob([bytes], {type: "image/png"}));
   }
+
+  // A thumbnail lands in the thread per attached file, which is what has to be there before Enter.
+  document.getElementById("upload").addEventListener("change", (event) => {
+    for (const file of event.currentTarget.files) {
+      const thumb = document.createElement("p");
+      thumb.className = "attached";
+      thumb.textContent = file.name;
+      document.getElementById("thread").appendChild(thumb);
+    }
+  });
 
   function submitted(event) {
     if (event.key !== "Enter") return;

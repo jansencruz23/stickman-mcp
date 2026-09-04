@@ -7,7 +7,7 @@ import threading
 import time
 import wave
 import zlib
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -125,6 +125,7 @@ class ImageCall:
     negative_prompt: str
     seed: int
     destination: Path
+    references: tuple[Path, ...] = ()
 
 
 class FakeMetaChat:
@@ -132,13 +133,15 @@ class FakeMetaChat:
 
     def __init__(self, opened: list["FakeMetaChat"] | None = None) -> None:
         self.prompts: list[str] = []
+        self.attachments: list[tuple[Path, ...]] = []
         self.closed = False
         self.raises: Exception | None = None
         if opened is not None:
             opened.append(self)
 
-    def request_image(self, prompt: str) -> bytes:
+    def request_image(self, prompt: str, references: Sequence[Path] = ()) -> bytes:
         self.prompts.append(prompt)
+        self.attachments.append(tuple(references))
         if self.raises is not None:
             raise self.raises
         return solid_png_bytes(16, 9, (len(self.prompts), len(prompt) % 256, 200))
@@ -157,10 +160,17 @@ class LoggedBackend:
         self.fail_after: int | None = None
         self.pace: threading.Semaphore | None = None
 
-    def generate(self, prompt: str, negative_prompt: str, seed: int, destination: Path) -> None:
+    def generate(
+        self,
+        prompt: str,
+        negative_prompt: str,
+        seed: int,
+        destination: Path,
+        references: Sequence[Path] = (),
+    ) -> None:
         if self.pace is not None:
             assert self.pace.acquire(timeout=GATE_TIMEOUT), "the test never released this image"
-        self.calls.append(ImageCall(prompt, negative_prompt, seed, destination))
+        self.calls.append(ImageCall(prompt, negative_prompt, seed, destination, tuple(references)))
         if self.fail_after is not None and len(self.calls) > self.fail_after:
             raise RuntimeError(BACKEND_FAILURE)
         self.draw(self.calls[-1])
@@ -190,7 +200,9 @@ class MetaUnderFakeChat(LoggedBackend):
         self.backend = MetaAIBackend(lambda: FakeMetaChat(self.chats), delay_seconds=0.0, sleep=lambda _: None)
 
     def draw(self, call: ImageCall) -> None:
-        self.backend.generate(call.prompt, call.negative_prompt, call.seed, call.destination)
+        self.backend.generate(
+            call.prompt, call.negative_prompt, call.seed, call.destination, call.references
+        )
 
     def close(self) -> None:
         self.backend.close()

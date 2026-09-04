@@ -16,6 +16,11 @@ from .images import ImageError
 
 HOME_URL = "https://www.meta.ai/"
 IMAGE_REQUEST = "Generate an image:"
+# An attachment reads as "edit this" unless the words say otherwise, so they must say otherwise.
+REFERENCE_REQUEST = (
+    "Use the attached picture only as a reference for how the character and setting look. "
+    "Do not edit or reproduce it. Draw a new image:"
+)
 
 LOGIN_HELP = (
     "Meta AI is not logged in. Run 'uv run python scripts/meta_login.py' and sign in by hand once, "
@@ -44,8 +49,8 @@ LOGIN_SIGNS = ("log into facebook", "log in to facebook", "continue with faceboo
 class MetaChat(Protocol):
     """One open Meta AI session. It knows the page; it knows nothing about Runs or Scenes."""
 
-    def request_image(self, prompt: str) -> bytes:
-        """Send one prompt down the thread and return the image Meta answered with."""
+    def request_image(self, prompt: str, references: Sequence[Path] = ()) -> bytes:
+        """Send one prompt down the thread, with any reference pictures attached, and return the image."""
 
     def close(self) -> None:
         """Shut the thread and the browser behind it down."""
@@ -66,11 +71,19 @@ class MetaAIBackend:
         self._chat: MetaChat | None = None
         self._asked = False
 
-    def generate(self, prompt: str, negative_prompt: str, seed: int, destination: Path) -> None:
+    def generate(
+        self,
+        prompt: str,
+        negative_prompt: str,
+        seed: int,
+        destination: Path,
+        references: Sequence[Path] = (),
+    ) -> None:
         """The seed is accepted and unused: Meta offers no way to ask for the same pixels twice."""
         self._pace()  # waited out before the window appears, so an open browser is always a busy one
         chat = self._opened()
-        write_png(destination, chat.request_image(compose_request(prompt, negative_prompt)))
+        asked = compose_request(prompt, negative_prompt, references)
+        write_png(destination, chat.request_image(asked, references))
 
     def close(self) -> None:
         """Called when a batch or a redraw ends, which is what keeps a Run to exactly one browser."""
@@ -102,9 +115,10 @@ def blocking_reason(url: str, visible_text: str) -> str | None:
     return None
 
 
-def compose_request(prompt: str, negative_prompt: str) -> str:
+def compose_request(prompt: str, negative_prompt: str, references: Sequence[Path] = ()) -> str:
     """Meta reads one plain sentence, so the negative prompt has to become words rather than a field."""
-    asked = f"{IMAGE_REQUEST} {prompt}"
+    opening = REFERENCE_REQUEST if references else IMAGE_REQUEST
+    asked = f"{opening} {prompt}"
     if not negative_prompt.strip():
         return asked
     return f"{asked}. Avoid: {negative_prompt}."
@@ -123,6 +137,9 @@ def write_png(destination: Path, data: bytes) -> None:
 
 MIN_IMAGE_PIXELS = 256  # avatars, icons and emoji are small; a generated picture is not
 COMPOSER = '[data-testid="composer-input"][contenteditable="true"]'
+# Meta hides its upload behind a button; the input underneath takes files whatever the button does.
+FILE_INPUT = 'input[type="file"]'
+ATTACH_SETTLE_SECONDS = 2.0
 POLL_SECONDS = 0.25
 SETTLE_SECONDS = 1.5
 LAST_CHARACTERS = 200
@@ -161,15 +178,33 @@ def start_thread(page: Any, home_url: str = HOME_URL) -> None:
     page.wait_for_selector(COMPOSER)
 
 
-def ask_for_image(page: Any, prompt: str, timeout_seconds: float, sent: Sequence[str] = ()) -> bytes:
+def ask_for_image(
+    page: Any,
+    prompt: str,
+    timeout_seconds: float,
+    sent: Sequence[str] = (),
+    references: Sequence[Path] = (),
+) -> bytes:
     """One prompt into the composer, then wait for the picture, the way a person uses the page."""
     asked = [*sent, prompt]
     refuse_if_blocked(page, asked)
     already = big_images(page)
+    attach(page, references)
     box = composer(page)
     box.fill(prompt)  # fill focuses without a pointer hit test, which anything overlapping would fail
     box.press("Enter")
     return download(page, wait_for_picture(page, already, timeout_seconds, asked))
+
+
+def attach(page: Any, references: Sequence[Path]) -> None:
+    """Set straight on the file input: Meta keeps it hidden behind a button no headless click can find."""
+    if not references:
+        return
+    missing = [str(path) for path in references if not path.is_file()]
+    if missing:
+        raise ImageError(f"reference picture(s) missing: {', '.join(missing)}")
+    page.locator(FILE_INPUT).first.set_input_files([str(path) for path in references])
+    time.sleep(ATTACH_SETTLE_SECONDS)  # the thumbnail has to land before Enter, or it sends without it
 
 
 def composer(page: Any) -> Any:
@@ -226,12 +261,12 @@ class PlaywrightMetaChat:
         self._page: Any = None
         self._asked = False
 
-    def request_image(self, prompt: str) -> bytes:
+    def request_image(self, prompt: str, references: Sequence[Path] = ()) -> bytes:
         page = self._opened()
         if self._asked:  # the launch already landed on a clean thread
             start_thread(page)
         self._asked = True
-        return ask_for_image(page, prompt, self.timeout_seconds)
+        return ask_for_image(page, prompt, self.timeout_seconds, references=references)
 
     def close(self) -> None:
         if self._context is not None:

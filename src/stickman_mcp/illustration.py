@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import random
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 
 from .config import ChannelConfig
 from .images import META_AI, ImageBackend, ImageError, SDXLLightningBackend
 from .meta_ai import MetaAIBackend, PlaywrightMetaChat
 from .runs import RunStore
-from .script import Scene, Script, ScriptError
+from .script import Scene, Script, ScriptError, establisher_for
 
 MAX_SEED = 2**31 - 1
 
@@ -42,7 +42,14 @@ def generate_images(
             destination = runs.image_path(run_id, scene.id)
             if not (only_missing and destination.is_file()):
                 prompt = compose_prompt(scene, prefix_for(scene, config))
-                draw(destination, prompt, negative_for(scene, config), scene_seed(config, scene.id), backend)
+                draw(
+                    destination,
+                    prompt,
+                    negative_for(scene, config),
+                    scene_seed(config, scene.id),
+                    backend,
+                    references_for(scene, script, runs, run_id),
+                )
             yield scene.id
     finally:
         backend.close()  # one batch is one browser session, however many threads it opens inside
@@ -55,22 +62,54 @@ def redraw_scene(
     backend: ImageBackend,
     config: ChannelConfig,
     seed: int,
+    script: Script,
 ) -> Path:
     """One Scene, one seed, same composition as the batch: a redraw differs only by seed and prompt."""
     destination = runs.image_path(run_id, scene.id)
     prompt = compose_prompt(scene, prefix_for(scene, config))
+    references = references_for(scene, script, runs, run_id)
     try:
-        draw(destination, prompt, negative_for(scene, config), seed, backend)
+        draw(destination, prompt, negative_for(scene, config), seed, backend, references)
     finally:
         backend.close()
     return destination
 
 
-def draw(destination: Path, prompt: str, negative_prompt: str, seed: int, backend: ImageBackend) -> None:
+def references_for(scene: Scene, script: Script, runs: RunStore, run_id: str) -> tuple[Path, ...]:
+    """The pictures this Scene is drawn from: its Lead sheet, its Beat Group's setting, or neither."""
+    found = []
+    lead = runs.lead_path(run_id)
+    if scene.lead and lead.is_file():
+        found.append(lead)
+    establisher = establisher_for(script, scene.id)
+    if establisher is not None and establisher != scene.id:
+        found.append(setting_reference(runs, run_id, scene.id, establisher))
+    return tuple(found)
+
+
+def setting_reference(runs: RunStore, run_id: str, scene_id: int, establisher: int) -> Path:
+    """A batch always draws the establisher first, so a missing one means a redraw out of order."""
+    setting = runs.image_path(run_id, establisher)
+    if not setting.is_file():
+        raise ImageError(
+            f"scene {scene_id} is drawn from Beat Group establisher {establisher}, whose image is "
+            f"missing. Draw scene {establisher} first with stickman_generate_images and only_missing set."
+        )
+    return setting
+
+
+def draw(
+    destination: Path,
+    prompt: str,
+    negative_prompt: str,
+    seed: int,
+    backend: ImageBackend,
+    references: Sequence[Path] = (),
+) -> None:
     """Publish by rename, so an interrupted image is never mistaken for a finished one on resume."""
     partial = destination.with_name(destination.name + ".part")
     try:
-        backend.generate(prompt, negative_prompt, seed, partial)
+        backend.generate(prompt, negative_prompt, seed, partial, references)
     except ImageError:
         raise
     except Exception as exc:
@@ -114,3 +153,22 @@ def redraw_seed(config: ChannelConfig, scene_id: int, seed: int | None) -> int:
     while rerolled == batch:
         rerolled = random.randrange(MAX_SEED)
     return rerolled
+
+
+def audition_lead(
+    runs: RunStore,
+    run_id: str,
+    sheet_prompt: str,
+    candidates: int,
+    backend: ImageBackend,
+    config: ChannelConfig,
+) -> Iterator[int]:
+    """Draws the Lead candidates a creator picks between. Each is one sheet, so each is one attachment."""
+    try:
+        for candidate in range(1, candidates + 1):
+            destination = runs.lead_candidate_path(run_id, candidate)
+            prompt = f"{config.style_prefix} {sheet_prompt}"
+            draw(destination, prompt, config.negative_prompt, config.base_seed + candidate, backend)
+            yield candidate
+    finally:
+        backend.close()

@@ -111,3 +111,32 @@ def test_a_block_that_arrives_mid_thread_is_still_caught(page):
         ask_for_image(page, "scene two", TIMEOUT_SECONDS)
 
     assert "security check" in str(caught.value)
+
+
+def test_reference_pictures_are_attached_before_the_prompt_is_sent(page, tmp_path):
+    _stub(page, "meta-chat.html")
+    sheet = tmp_path / "lead.png"
+    sheet.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 32)
+
+    data = ask_for_image(page, "a woman walking", TIMEOUT_SECONDS, references=[sheet])
+
+    assert data[:8] == b"\x89PNG\r\n\x1a\n"
+    assert page.locator(".attached").inner_text() == "lead.png"
+
+
+def test_two_references_go_up_together_because_a_scene_can_need_both(page, tmp_path):
+    _stub(page, "meta-chat.html")
+    sheet, setting = tmp_path / "lead.png", tmp_path / "001.png"
+    for path in (sheet, setting):
+        path.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 32)
+
+    ask_for_image(page, "a woman in the kitchen", TIMEOUT_SECONDS, references=[sheet, setting])
+
+    assert page.locator(".attached").all_inner_texts() == ["lead.png", "001.png"]
+
+
+def test_a_missing_reference_stops_the_scene_rather_than_drawing_without_it(page, tmp_path):
+    _stub(page, "meta-chat.html")
+
+    with pytest.raises(ImageError, match="reference picture"):
+        ask_for_image(page, "a woman walking", TIMEOUT_SECONDS, references=[tmp_path / "gone.png"])

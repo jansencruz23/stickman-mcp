@@ -1,5 +1,6 @@
 """The Meta AI backend, with the browser faked. Nothing here launches a browser or reaches the network."""
 
+import inspect
 import json
 import subprocess
 import sys
@@ -11,7 +12,7 @@ from conftest import FakeMetaChat, MetaUnderFakeChat, finished, poll_job
 from stickman_mcp import server
 from stickman_mcp.config import ConfigError, load_channel_config
 from stickman_mcp.images import ImageError, SDXLLightningBackend
-from stickman_mcp.meta_ai import HOME_URL, LOGIN_HELP, MetaAIBackend, blocking_reason
+from stickman_mcp.meta_ai import HOME_URL, LOGIN_HELP, MetaAIBackend, blocking_reason, compose_request
 from stickman_mcp.server import (
     stickman_create_run,
     stickman_generate_images,
@@ -252,3 +253,35 @@ def test_the_delay_is_waited_out_before_the_browser_opens(tmp_path):
     backend.generate("scene 2", "", 4244, tmp_path / "002.png")
 
     assert events == ["opened", "slept", "opened"], "the second window must not open until the pause is over"
+
+
+def test_a_plain_request_asks_for_an_image_and_says_nothing_about_references():
+    asked = compose_request("a kitchen at dawn", "blurry")
+
+    assert asked == "Generate an image: a kitchen at dawn. Avoid: blurry."
+
+
+def test_a_request_carrying_references_tells_meta_not_to_edit_them(tmp_path):
+    asked = compose_request("a woman in the kitchen", "blurry", [tmp_path / "lead.png"])
+
+    assert "only as a reference" in asked
+    assert "Do not edit or reproduce it" in asked, "an attachment reads as edit-this unless words say otherwise"
+    assert asked.endswith("Draw a new image: a woman in the kitchen. Avoid: blurry.")
+
+
+def test_the_backend_hands_its_references_straight_to_the_chat(tmp_path):
+    chats: list[FakeMetaChat] = []
+    backend = MetaAIBackend(lambda: FakeMetaChat(chats), delay_seconds=0.0, sleep=lambda _: None)
+    sheet = tmp_path / "lead.png"
+
+    backend.generate("a woman walking", "blurry", 1, tmp_path / "out.png", [sheet])
+
+    assert chats[0].attachments == [(sheet,)]
+
+
+def test_both_backends_satisfy_the_one_contract_including_references():
+    """A Narrative Run passes references to whichever backend the channel picked; neither may reject them."""
+    for backend in (SDXLLightningBackend(64, 64, 1, 1.0), MetaAIBackend(FakeMetaChat, 0.0, lambda _: None)):
+        taken = inspect.signature(backend.generate).parameters
+        assert list(taken) == ["prompt", "negative_prompt", "seed", "destination", "references"]
+        assert taken["references"].default == ()

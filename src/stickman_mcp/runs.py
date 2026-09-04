@@ -12,6 +12,8 @@ from .script import Script, ScriptError, parse_script, script_to_dict
 
 AUDIO_DIR = "audio"
 IMAGES_DIR = "images"
+REFERENCE_DIR = "reference"
+LEAD_FILE = "lead.png"
 SCRIPT_FILE = "script.json"
 JOB_FILE = "job.json"
 VIDEO_FILE = "video.mp4"
@@ -45,6 +47,7 @@ class RunStore:
             "scene_count": len(script.scenes) if script else 0,
             "narration_clips": self.narration_clip_count(run_id),
             "images": self.image_count(run_id),
+            "lead_chosen": self.lead_path(run_id).is_file(),
             "video_rendered": self.video_path(run_id).is_file(),
             "subtitles": self.subtitles_path(run_id).is_file(),
             "metadata": self.metadata_path(run_id).is_file(),
@@ -61,6 +64,16 @@ class RunStore:
 
     def image_count(self, run_id: str) -> int:
         return len(list((self.path(run_id) / IMAGES_DIR).glob("*.png")))
+
+    def lead_path(self, run_id: str) -> Path:
+        """The chosen Lead sheet. Carries no Scene id, so cutting or merging Scenes never orphans it."""
+        return self.path(run_id) / REFERENCE_DIR / LEAD_FILE
+
+    def lead_candidate_path(self, run_id: str, candidate: int) -> Path:
+        return self.path(run_id) / REFERENCE_DIR / f"lead-{candidate:02d}.png"
+
+    def lead_candidates(self, run_id: str) -> list[Path]:
+        return sorted((self.path(run_id) / REFERENCE_DIR).glob("lead-*.png"))
 
     def job_path(self, run_id: str) -> Path:
         return self.path(run_id) / JOB_FILE
@@ -102,6 +115,7 @@ class RunStore:
             run_id = f"{base}-{attempt}"
         (self.path(run_id) / AUDIO_DIR).mkdir(parents=True)
         (self.path(run_id) / IMAGES_DIR).mkdir(parents=True)
+        (self.path(run_id) / REFERENCE_DIR).mkdir(parents=True)
         return run_id
 
 
