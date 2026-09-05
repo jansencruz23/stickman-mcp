@@ -133,12 +133,18 @@ Scenes share a setting, and hold it by repeating its Visual Bible line word for 
 
 Everything below applies to both.
 
-Meta declines to draw a person in visible distress, and a refusal is invisible: it answers with
-alternatives instead of a picture, which the backend can only read as a timeout after 180 seconds.
-A body under a sheet stopped one batch, a man kneeling with his head hanging stopped another.
-Collapse, unconsciousness, a hand at a throat and the like all risk it. The narration carries that
-meaning perfectly well on its own, so let the picture hold the place instead of the person - the
-empty ground, the heat shimmer, the still water - or show the figure upright and seen from behind.
+Meta declines some prompts, and a refusal is invisible: it answers with words instead of a picture,
+which the backend can only read as a timeout after 180 seconds.
+
+**The line is suffering, not intensity** - narrowed 2026-09-04 by testing it deliberately. Refused: a
+body under a sheet, a man kneeling with his head hanging, a face shouting with veins showing, and a
+two panel before-and-after split. Drawn without complaint: bulging bloodshot eyes, deep hollow eye
+rings, sweat, drool, wild hair, a manic grin, and a dinosaur's open jaws a foot from a man's face.
+So a wrecked, frightened or disgusting figure is fine; a figure in pain is not. Collapse,
+unconsciousness and a hand at a throat still risk it.
+
+Where a Scene does need pain, let the picture hold the place instead of the person - the empty
+ground, the heat shimmer, the still water - or show the figure upright and seen from behind.
 
 Describe subject, action and composition in plain nouns and verbs — what is in the frame and what
 it is doing. Content only: the server prepends the channel Style Prefix and applies the negative
