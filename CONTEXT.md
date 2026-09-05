@@ -61,16 +61,16 @@ Scenes run in Beat Groups that carry a setting across several shots. The shape a
 ### Narrative Format
 
 **Beat Group**:
-A run of 3-6 consecutive Scenes sharing one setting. The cut between two Beat Groups is deliberate, which is what keeps continuity a promise only within a group.
+A run of 3-6 consecutive Scenes sharing one setting. The cut between two Beat Groups is deliberate, which is what keeps continuity a promise only within a group. A way of writing rather than a field: nothing in a Script marks one.
 
 **Establishing Shot**:
-The Scene that opens a Beat Group. Its image is the setting reference every later Scene in that group is drawn from, so it is drawn first and a redraw makes its whole group stale.
+The Scene that opens a Beat Group, written as the wide shot that shows the space. The Scenes after it look closer into that same space, and hold it by repeating its Visual Bible entry verbatim.
 
 **Lead**:
 A Run's recurring character, held as a Visual Bible entry that also carries a reference picture. One per Run.
 
 **Lead Sheet**:
-The chosen picture of the Lead: several angles and expressions in one image, attached to the Scenes that hold the Lead.
+The chosen picture of the Lead: several angles and expressions in one image, attached to the Scenes that hold the Lead. The only picture ever attached to a Scene, because the image engine reads one.
 _Avoid_: avatar, which is the channel's own fixed figure and its YouTube profile picture
 
 **Lead Audition**:

@@ -11,7 +11,7 @@ The vocabulary below is the project's — [CONTEXT.md](../../../CONTEXT.md) defi
 
 ## Read the channel's doctrine first
 
-The skill holds what is true of every channel. The premise, intro, outro, cards and avatar are
+The skill holds what is true of every channel. The premise, intro, cards and avatar are
 per-channel and live in `docs/channels/`, one file each - read the one for the channel this Run is
 on before writing a Scene:
 
@@ -108,35 +108,28 @@ into each of them, the same way any recurring location is. A set is what separat
 looks like a channel from one that looks like a blank slide, and it should be the literal claim the
 intro makes. Each channel's own set is in its doctrine file.
 
-Presenter Scenes carry the `people` clause like any other Scene with a person in it. They also bookend
-the outro, which is already the figure front on, so the video opens and closes on the same face.
+Presenter Scenes carry the `people` clause like any other Scene with a person in it. The channel
+avatar is that figure, and since there is no outro it now appears only here - so the intro is the
+one place the channel's face is established, and it must not drift.
 
-### The outro
+### The ending
 
-A channel with a sign-off ends every Script on the same three Scenes, so it signs off the same way
-every time. The lines are in the doctrine file; a channel without them yet needs them written before
-its first upload.
-They are ordinary Scenes - narrated, illustrated and timed by the same tools - and they count
-towards the Scene total.
+**No channel runs an outro.** A video ends on its last Scene - the last ranked item, or the last
+beat of the story. Dropped across all three channels on 2026-09-04: a fixed sign-off written once
+and pasted onto every video lands unconnected to what the video was actually about, and reads as
+arriving out of nowhere.
 
-1. **The callback**, written fresh each video: one sentence naming the worst thing in it.
-2. **The turn**, fixed wording per channel.
-3. **The ask**, fixed wording per channel.
+Two things follow. Nothing asks for on-screen words at the end, and there is no fifteen-second tail
+for YouTube's end screen, so the subscribe button and next-video card have nowhere to sit - a known
+cost, accepted. Write the last Scene so it can carry the ending on its own.
 
-The exact lines and the avatar prompts for Scenes 2 and 3 are in the channel's doctrine file. They
-are fixed for a reason: that figure is the channel avatar and it must not drift.
-
-The three run about 15 seconds together, which is the runtime YouTube's end screen needs. A shorter
-outro leaves nowhere to put it, because a still is held exactly as long as its Narration Clip.
-Nothing in the outro asks for on-screen words: `text` is in the negative prompt, and the subscribe
-button is YouTube's own end-screen element rather than something the image draws.
 
 ### Image Prompts
 
 In the [Illustrative Format](../../../CONTEXT.md) each Scene is a **standalone visual metaphor** for
 its narration: no Scene promises visual continuity with its neighbours, so each prompt must stand
 alone. In the narrative format that holds only across a Beat Group boundary - inside a group the
-Scenes share a setting and are drawn from its establisher.
+Scenes share a setting, and hold it by repeating its Visual Bible line word for word.
 
 Everything below applies to both.
 
@@ -230,24 +223,20 @@ its intro length for illustrative Runs, and a narrative Run on the same channel 
 
 ### Beat Groups
 
-A Beat Group is 3-6 consecutive Scenes sharing one setting. The first Scene of each group sets
-`"establishes": true` and is its **Establishing Shot**; every Scene after it belongs to that group
-until the next establisher. Scene 1 must set it, or the Script is refused.
+A Beat Group is 3-6 consecutive Scenes sharing one setting. Write the first as the wide shot that
+shows the space, then the Scenes after it as closer looks *inside* that space, and cut hard to a new
+group when the story moves.
 
-Write the establisher as the wide shot that shows the space, then the Scenes after it as closer
-looks *inside* that space. The server attaches the establisher's finished picture to each of them,
-so they are drawn from it rather than described into matching it
-([ADR-0003](../../../docs/adr/0003-reference-images-make-scenes-order-dependent.md)).
+**Nothing in the Script marks a group.** It is a way of writing, not a field. What actually holds the
+setting together is a **Visual Bible entry pasted verbatim** into every Image Prompt in the group -
+the same mechanism that holds any recurring location, and the only one that works. Write the setting
+once, as one line, and repeat it exactly.
 
-**The cut between two groups is deliberate.** Continuity is promised inside a group and nowhere
-else, which is what makes this achievable at all - Meta has no seed, and holding one setting across
-forty Scenes is not something it can do. Three to six is the working range; a group of twelve is a
-group that has stopped being one.
+**The cut between two groups is deliberate.** Continuity is promised inside a group and nowhere else.
+Meta has no seed, so holding one setting across forty Scenes is not achievable; holding it across
+four, by repeating its line, is. Three to six is the working range - a group of twelve is a group
+that has stopped being one.
 
-**Regenerating an establisher makes its whole group stale.** The tool returns a `warning` naming the
-Scenes drawn from the old setting. They are still on disk and still fine on their own - delete the
-files it names and re-run `stickman_generate_images` with `only_missing`, or the video mixes two
-versions of one room.
 
 ### The Lead
 
@@ -265,7 +254,10 @@ rule as a style clause and it matters more here: an attached picture is a strong
 a phrase, so marking a Scene that has no person is how the Lead ends up in an empty street. Leaving
 a Scene unmarked only costs that Scene its reference.
 
-One Lead per Run. A second character is a second attachment and is not built.
+**One Lead per Run, and one picture per Scene.** Meta reads the first attachment and ignores a
+second, so there is no room for a second character or for a setting picture alongside the Lead
+([ADR-0004](../../../docs/adr/0004-one-reference-picture-per-scene.md)). Everything other than the
+Lead's face is held by words.
 
 ### Acting, in a picture that does not move
 

@@ -20,8 +20,14 @@ in parallel and does not need this channel at all. Worth knowing which experimen
 rather than a stated question. No presenter to camera and no standing set: a story that opens by
 cutting to a narrator explaining that a story is coming is fighting itself.
 
-**Outro.** Not written. Needs a sign-off in the shape of the other two channels - a callback written
-fresh, a fixed turn, a fixed ask - before the first upload.
+**No outro.** The video ends on its last Scene. No callback, no fixed turn, no sign-off - a story
+that has finished should stop, and the three-Scene outro the other two channels run is an explainer
+device that would read as tacked on here.
+
+The cost is real and accepted: those three Scenes exist partly because they run about fifteen
+seconds, which is the runtime YouTube's end screen needs. Ending on the last Scene leaves nowhere to
+put one, so this channel gives up the end-screen subscribe button and the next-video card. Watch
+whether that shows up in subscribers per view against the other two channels.
 
 **Cards.** Time and chapter markers rather than ranks: "2019", "THREE YEARS LATER", "THE NIGHT IT
 CHANGED". Same `card: true` flag, same `plain_card` clause. Short capitalised words only - Meta
@@ -39,20 +45,31 @@ expression row so Meta has references for them.
 **Quota.** One Run a day on the shared Meta account, roughly twenty one images. Four audition
 candidates plus a forty-Scene story is a two to three day image job.
 
-## The probe, before any of this is used
+## What the probe found (2026-09-04, 10 images, `tuning/anime-probe/`)
 
-One day's allowance, eight to ten images. It answers four things, and the second one decides
-whether the design in [ADR-0003](../adr/0003-reference-images-make-scenes-order-dependent.md) is
-buildable as written:
+**Meta draws anime well.** The character sheet came back with four angles, a three-expression row
+and a correct 16:9 frame, off nothing but a placeholder prefix.
 
-1. **Does an attachment read as a reference or as an edit?** Attach a character sheet, ask for that
-   character in a new setting. If Meta returns the sheet edited, the Lead mechanism needs rethinking.
-2. **Are two attachments accepted at once?** A Scene holding the Lead inside a Beat Group sends the
-   Lead Sheet *and* the Establishing Shot. If only one lands, one of them has to go back to text.
-3. **Does the Lead leak?** Draw an unmarked Scene in the same session and check no character appears.
-4. **Which shot clauses hold the style?** Six exist. A composed layout is the recorded way to lose
-   the prefix outright - a 2x2 panel grid came back watercolour with a photographic fox on
-   2026-08-31 - so each shot word needs proving before it is trusted.
+**A character reference works.** The sheet attached to a fresh prompt produced a new scene - bus
+stop, rain, different clothes and pose - with the same face and hair, and an incidental costume
+detail carried through. Nothing was edited or returned. The Lead mechanism is sound.
 
-Record what comes back as comments beside the clauses in the config, the way every other hard-won
-rule in `channel.toml` is kept.
+**A setting reference does not.** Attached alongside the sheet, the kitchen came back a different
+kitchen. Attached alone, with an explicit "keep the room exactly as it is", still a different
+kitchen. Meta reads an attached scene as mood and palette, not as a room to rebuild. And the first
+attachment wins: putting the setting first cost the character too, returning a person nobody drew.
+Settings are therefore held by a verbatim Visual Bible line
+([ADR-0004](../adr/0004-one-reference-picture-per-scene.md)).
+
+**Shot clauses hold.** `shot_wide`, `shot_close` and `shot_over_shoulder` each did what they say and
+kept the 16:9 frame - close included, which was the one expected to drift portrait. `shot_low`,
+`shot_high` and `shot_medium` are untested. `shot_over_shoulder` invents a second figure by
+definition, so it belongs only on Scenes that genuinely have two people.
+
+## Still open: the style is not pinned
+
+The look varied across the ten images - flat cel, watercolour, painterly, bright generic anime -
+because `"anime illustration"` names no medium. Channel one holds its look with "bold uneven hand
+inked black outlines"; this channel needs the equivalent, and it needs its own probe day to find it.
+Until then the prefix and negative prompt in `channel-anime.toml` stay placeholders and no Run should
+start here.

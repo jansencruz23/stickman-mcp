@@ -21,15 +21,13 @@ move and the viewer cannot tell the cut happened.
 It earns its place twice: richer than a flat background, and it is the literal claim the intro
 makes, that these stories come out of the written record.
 
-**Outro.** Three Scenes, every video:
+**No outro.** The video ends on its last ranked item. Removed 2026-09-04: the fixed turn and ask
+landed unconnected to whatever the video had just been about, so they read as arriving out of
+nowhere. The countdown's last item is its own ending.
 
-1. **The callback**, written fresh: one sentence naming the worst thing in the video.
-2. **The turn**, fixed: "Whatever your day looked like, whatever went wrong - it could be worse."
-3. **The ask**, fixed: "Subscribe. Next time, it will be."
-
-Scenes 2 and 3 are a single stick figure face front on against a plain flat background, resigned in
-2 and shrugging in 3. That is the channel avatar and it must not drift. The three run about 15
-seconds together, which is the runtime YouTube's end screen needs.
+The channel avatar still exists for the intro presenter Scenes; it is simply no longer the last
+thing on screen. And the fifteen-second tail those three Scenes gave YouTube's end screen is gone
+with them, so there is nowhere to put a subscribe button or a next-video card.
 
 **Clauses.** `people` only, plus the shared shot grammar. No creature clause: this channel's stick
 figure treatment is people, and the negative prompt bans stick figure animals outright.

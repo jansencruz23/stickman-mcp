@@ -13,9 +13,12 @@ projects_dir = "projects-anime"
 music_dir = "music"
 
 [style]
-# PLACEHOLDER. Only the aspect clause is carried over, and only because it is measured: Meta takes
-# no size argument and answers in words, and buried at the end the clause was ignored on 18 of 25
-# Scenes, so it leads and closes whatever replaces this line.
+# STILL A PLACEHOLDER, and now known to be too loose. The 2026-09-04 probe drew good anime every
+# time but not the same anime: flat cel on one image, watercolour on the next, bright generic
+# anime on a third. "anime illustration" names no medium, so it cannot hold a channel look the way
+# channel one's "bold uneven hand inked black outlines" does. Pinning it needs its own probe day.
+# The aspect clause is carried over because it is measured: Meta takes no size argument and answers
+# in words, and buried at the end the clause was ignored on 18 of 25 Scenes, so it leads and closes.
 prefix = "16:9 widescreen landscape frame, much wider than it is tall, anime illustration, wide 16:9 landscape composition,"
 # PLACEHOLDER. Deliberately short: the stickman channels' list bans the anime look itself. Rebuild
 # this from what the probe actually returns, not from what the other two channels ban.
@@ -23,8 +26,10 @@ negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signa
 
 # Same opt-in rule as every channel: a clause rides on the Scenes that need it, never channel-wide.
 # The shot grammar is shared with the stickman channels, so a Scene reads the same on any of them.
-# UNPROVEN here as on the other two: a composed layout is the recorded way to lose the prefix
-# outright, so each shot word needs the probe before it is trusted. Record findings beside it.
+# Probed 2026-09-04 on this channel: wide, close and over_shoulder all held the look and the 16:9
+# frame, close included, which was the one expected to drift portrait. low, high and medium are
+# still unproven. over_shoulder necessarily invents a second figure - it is a two person shot by
+# definition - so it belongs only on Scenes that actually have two people.
 [style.clauses]
 shot_wide = "seen from far back, the whole setting visible across the frame, the subject small in it,"
 shot_medium = "seen from the waist up, filling the middle of the frame,"

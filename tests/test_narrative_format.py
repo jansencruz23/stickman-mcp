@@ -1,4 +1,4 @@
-"""The narrative format: Beat Groups, the Lead, and the reference pictures they attach."""
+"""The Format a Run declares, and the Lead sheet that rides with the Scenes that opted in."""
 
 import json
 
@@ -6,7 +6,7 @@ import pytest
 from conftest import FakeImages, finished, poll_job, write_tiny_png
 
 from stickman_mcp import server
-from stickman_mcp.script import ScriptError, beat_groups, establisher_for, parse_script
+from stickman_mcp.script import ScriptError, parse_script
 from stickman_mcp.server import (
     stickman_audition_lead,
     stickman_choose_lead,
@@ -44,10 +44,10 @@ def _story(**overrides):
         "title": "Life Before AI",
         "format": "narrative",
         "scenes": [
-            {"id": 1, "narration": "A kitchen at dawn.", "image_prompt": "a kitchen at dawn", "establishes": True},
+            {"id": 1, "narration": "A kitchen at dawn.", "image_prompt": "a kitchen at dawn"},
             {"id": 2, "narration": "She reaches for a pen.", "image_prompt": "a hand takes a pen", "lead": True},
             {"id": 3, "narration": "She writes it down.", "image_prompt": "writing on paper", "lead": True},
-            {"id": 4, "narration": "Outside, a street.", "image_prompt": "a wide street", "establishes": True},
+            {"id": 4, "narration": "Outside, a street.", "image_prompt": "a wide street"},
             {"id": 5, "narration": "She walks to work.", "image_prompt": "walking past shops", "lead": True},
         ],
     }
@@ -64,7 +64,6 @@ def test_format_defaults_to_illustrative_so_every_existing_script_still_parses()
     )
 
     assert script.format == "illustrative"
-    assert beat_groups(script) == ()
 
 
 def test_an_unknown_format_is_refused_by_name():
@@ -72,35 +71,7 @@ def test_an_unknown_format_is_refused_by_name():
         parse_script(_story(format="cinematic"))
 
 
-def test_a_narrative_script_groups_each_establisher_with_the_scenes_that_follow_it():
-    script = parse_script(_story())
-
-    assert beat_groups(script) == ((1, 2, 3), (4, 5))
-    assert establisher_for(script, 3) == 1
-    assert establisher_for(script, 4) == 4
-    assert establisher_for(script, 5) == 4
-
-
-def test_a_narrative_script_must_open_on_an_establishing_shot():
-    scenes = _story()["scenes"]
-    scenes[0] = {k: v for k, v in scenes[0].items() if k != "establishes"}
-
-    with pytest.raises(ScriptError, match="scene 1 must set establishes"):
-        parse_script(_story(scenes=scenes))
-
-
-def test_establishes_is_refused_on_an_illustrative_script_rather_than_silently_ignored():
-    with pytest.raises(ScriptError, match="scene 1 sets establishes, which only the narrative format uses"):
-        parse_script(
-            {
-                "topic": TOPIC,
-                "title": "A List",
-                "scenes": [{"id": 1, "narration": "One.", "image_prompt": "one", "establishes": True}],
-            }
-        )
-
-
-def test_an_illustrative_script_has_no_beat_groups_even_though_it_may_carry_a_lead():
+def test_an_illustrative_script_may_still_carry_a_lead():
     script = parse_script(
         {
             "topic": TOPIC,
@@ -109,7 +80,6 @@ def test_an_illustrative_script_has_no_beat_groups_even_though_it_may_carry_a_le
         }
     )
 
-    assert beat_groups(script) == ()
     assert script.scenes[0].lead is True
 
 
@@ -120,9 +90,8 @@ def test_a_saved_narrative_script_round_trips_its_format_and_scene_flags(channel
 
     saved = json.loads((channel.projects_dir / run_id / "script.json").read_text(encoding="utf-8"))
     assert saved["format"] == "narrative"
-    assert saved["scenes"][0]["establishes"] is True
     assert saved["scenes"][1]["lead"] is True
-    assert "establishes" not in saved["scenes"][1], "flags stay off the Scenes that never set them"
+    assert "lead" not in saved["scenes"][0], "a flag stays off the Scenes that never set it"
 
 
 def test_replacing_an_image_prompt_keeps_the_scene_flags_it_already_had(channel, drawn_story):
@@ -132,14 +101,6 @@ def test_replacing_an_image_prompt_keeps_the_scene_flags_it_already_had(channel,
 
     saved = json.loads((channel.projects_dir / run_id / "script.json").read_text(encoding="utf-8"))
     assert saved["scenes"][1]["lead"] is True, "a rewritten prompt must not strip the Scene's flags"
-    assert saved["scenes"][0]["establishes"] is True
-
-
-def test_regenerating_an_establisher_warns_that_its_whole_group_is_now_stale(drawn_story):
-    result = json.loads(stickman_regenerate_image(drawn_story, 1))
-
-    assert "images/002.png, images/003.png" in result["warning"], "every stale file needs its own path"
-    assert "only_missing" in result["warning"], "the warning must name the way back"
 
 
 def test_regenerating_an_ordinary_scene_warns_about_nothing(drawn_story):
@@ -170,30 +131,7 @@ def test_the_lead_sheet_rides_only_on_the_scenes_that_are_marked_for_it(channel,
     lead_sheet = channel.projects_dir / run_id / "reference" / "lead.png"
     assert lead_sheet in _drawn(story_backend, 2).references
     assert lead_sheet in _drawn(story_backend, 5).references
-    assert lead_sheet not in _drawn(story_backend, 1).references, "an establisher nobody marked gets no Lead"
-    assert _drawn(story_backend, 4).references == (), "an unmarked Scene must attach nothing at all"
-
-
-def test_each_group_member_draws_from_its_own_establishing_shot(channel, story_backend):
-    run_id = _run_with_lead(channel)
-
-    stickman_generate_images(run_id)
-    poll_job(run_id, finished)
-
-    images = channel.projects_dir / run_id / "images"
-    assert images / "001.png" in _drawn(story_backend, 2).references
-    assert images / "001.png" in _drawn(story_backend, 3).references
-    assert images / "004.png" in _drawn(story_backend, 5).references
-    assert images / "001.png" not in _drawn(story_backend, 5).references, "groups must not bleed into each other"
-
-
-def test_an_establisher_never_references_itself(channel, story_backend):
-    run_id = _run_with_lead(channel)
-
-    stickman_generate_images(run_id)
-    poll_job(run_id, finished)
-
-    assert _drawn(story_backend, 1).references == ()
+    assert _drawn(story_backend, 1).references == (), "a Scene nobody marked attaches nothing at all"
     assert _drawn(story_backend, 4).references == ()
 
 
@@ -203,8 +141,7 @@ def test_a_marked_scene_draws_without_the_lead_when_no_sheet_was_ever_chosen(cha
     stickman_generate_images(run_id)
     poll_job(run_id, finished)
 
-    images = channel.projects_dir / run_id / "images"
-    assert _drawn(story_backend, 2).references == (images / "001.png",), "the setting still rides without a Lead"
+    assert _drawn(story_backend, 2).references == (), "a marked Scene with no sheet yet draws plainly"
 
 
 def test_an_illustrative_run_attaches_nothing_even_when_a_scene_claims_the_lead(channel, story_backend):
@@ -282,13 +219,3 @@ def test_an_audition_of_an_absurd_size_is_refused_before_it_spends_the_daily_all
     assert story_backend.calls == [], "nothing may be drawn when the request is refused"
 
 
-def test_a_group_member_says_so_rather_than_drawing_without_its_setting(channel, story_backend):
-    run_id = _run_with_lead(channel)
-    stickman_generate_images(run_id)
-    poll_job(run_id, finished)
-    (channel.projects_dir / run_id / "images" / "001.png").unlink()
-
-    result = stickman_regenerate_image(run_id, 3)
-
-    assert result.startswith("Error:")
-    assert "establisher 1" in result, "the creator needs to know which Scene to draw first"

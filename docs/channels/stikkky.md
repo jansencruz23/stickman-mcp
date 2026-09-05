@@ -17,13 +17,11 @@ three Scenes: hook, then the ranking rule, then straight into the first card.
 specimen jars and animal skulls, held as a Visual Bible entry. A topic off that lane gets its own
 set rather than borrowing this one.
 
-**Outro.** The channel sign-off, replacing Nature Is Trying's "Subscribe. It is still trying.":
-
-> None of this was built for you. You are just the one who has to live with it.
-> Subscribe. There is always another one.
-
-The three finished Runs above the sleep Run still end on the old line and need two clips and a
-re-render each, with no image redrawn.
+**No outro.** The video ends on its last ranked item, same as channel one and for the same reason,
+decided 2026-09-04 before the sign-off was ever used. The lines drafted on 2026-09-01 - "None of
+this was built for you..." - are dropped rather than applied, so the three older Runs no longer need
+re-cutting to match. The sleep Run keeps its outro until it is re-rendered; nothing is republished
+for this alone.
 
 **Cards.** Single large numerals, never a marked row of ten. That is what fixed the wrong-digit
 problem which beat three attempts on channel one; two Runs in a row have come back correct first

@@ -169,11 +169,9 @@ A Script may declare `"format"`, which is `"illustrative"` when omitted:
 - **`"narrative"`** — Scenes run in Beat Groups that hold a setting across several shots. What a
   story wants.
 
-In the narrative format a Scene may set `"establishes": true` to open a Beat Group; every Scene
-after it belongs to that group until the next establisher, and **Scene 1 must set it**. A Scene may
-set `"lead": true` to say it holds the Run's Lead. `establishes` is refused in the illustrative
-format rather than silently ignored; `lead` is legal in either, since a countdown may still have a
-recurring character.
+The format changes how you *write*, not what the Script can express: Beat Groups are a narrative
+writing convention (see the produce-video skill), and nothing marks one in the file. The one Scene
+flag either format may set is `"lead": true`, saying that Scene holds the Run's Lead.
 
 ```json
 {
@@ -181,7 +179,7 @@ recurring character.
   "title": "Life Before AI",
   "format": "narrative",
   "scenes": [
-    {"id": 1, "narration": "A kitchen at dawn.", "image_prompt": "a kitchen at dawn", "establishes": true},
+    {"id": 1, "narration": "A kitchen at dawn.", "image_prompt": "a kitchen at dawn"},
     {"id": 2, "narration": "She reaches for a pen.", "image_prompt": "a hand takes a pen", "lead": true}
   ]
 }
@@ -201,6 +199,11 @@ From then on the sheet is attached to **only** the Scenes marked `"lead": true`.
 optional: an attachment is a stronger instruction than a style clause, and a channel-wide one puts
 the Lead into every Scene that never asked for a person. A Scene marked `lead` before any sheet is
 chosen simply draws without it.
+
+It is also the **only** picture ever attached. Meta reads the first attachment and ignores a second,
+so there is no way to send a setting alongside a character - and an attached setting does not
+transfer even on its own ([ADR-0004](docs/adr/0004-one-reference-picture-per-scene.md)). Settings are
+held by a Visual Bible entry pasted verbatim, the way they always were.
 
 A failed validation returns an `Error:` naming the problem and writes nothing. A save that
 invalidates work already on disk returns a `warning` listing what went stale and which tool
@@ -265,17 +268,6 @@ If a job stops halfway — a crash, a restart, an out-of-memory — call
 `stickman_generate_images` again with `only_missing: true` and it draws just the Scenes
 without an image. Finished images are never redrawn.
 
-### Beat Groups make images order-dependent
-
-In the narrative format a Beat Group's Establishing Shot is attached to every later Scene in that
-group, so those Scenes are drawn *from* it ([ADR-0003](docs/adr/0003-reference-images-make-scenes-order-dependent.md)).
-Scene order already puts an establisher before its group, so a batch and an `only_missing` resume
-both draw them in the right order without doing anything special.
-
-The one thing to watch is a redraw. `stickman_regenerate_image` on an Establishing Shot returns a
-`warning` naming the Scenes drawn from the old setting — they are still on disk, still fine on
-their own, and no longer match. Delete the files it names and re-run
-`stickman_generate_images` with `only_missing: true`. Nothing is deleted for you.
 
 ### The style is applied for you
 

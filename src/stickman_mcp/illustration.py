@@ -10,7 +10,7 @@ from .config import ChannelConfig
 from .images import META_AI, ImageBackend, ImageError, SDXLLightningBackend
 from .meta_ai import MetaAIBackend, PlaywrightMetaChat
 from .runs import RunStore
-from .script import Scene, Script, ScriptError, establisher_for
+from .script import Scene, Script, ScriptError
 
 MAX_SEED = 2**31 - 1
 
@@ -48,7 +48,7 @@ def generate_images(
                     negative_for(scene, config),
                     scene_seed(config, scene.id),
                     backend,
-                    references_for(scene, script, runs, run_id),
+                    references_for(scene, runs, run_id),
                 )
             yield scene.id
     finally:
@@ -62,12 +62,11 @@ def redraw_scene(
     backend: ImageBackend,
     config: ChannelConfig,
     seed: int,
-    script: Script,
 ) -> Path:
     """One Scene, one seed, same composition as the batch: a redraw differs only by seed and prompt."""
     destination = runs.image_path(run_id, scene.id)
     prompt = compose_prompt(scene, prefix_for(scene, config))
-    references = references_for(scene, script, runs, run_id)
+    references = references_for(scene, runs, run_id)
     try:
         draw(destination, prompt, negative_for(scene, config), seed, backend, references)
     finally:
@@ -75,27 +74,13 @@ def redraw_scene(
     return destination
 
 
-def references_for(scene: Scene, script: Script, runs: RunStore, run_id: str) -> tuple[Path, ...]:
-    """The pictures this Scene is drawn from: its Lead sheet, its Beat Group's setting, or neither."""
-    found = []
+def references_for(scene: Scene, runs: RunStore, run_id: str) -> tuple[Path, ...]:
+    """The Lead sheet, on the Scenes that opted in. Meta reads only the first attachment, so there is
+    never a second: a setting picture sent alongside is ignored, and sent first it costs the Lead."""
     lead = runs.lead_path(run_id)
     if scene.lead and lead.is_file():
-        found.append(lead)
-    establisher = establisher_for(script, scene.id)
-    if establisher is not None and establisher != scene.id:
-        found.append(setting_reference(runs, run_id, scene.id, establisher))
-    return tuple(found)
-
-
-def setting_reference(runs: RunStore, run_id: str, scene_id: int, establisher: int) -> Path:
-    """A batch always draws the establisher first, so a missing one means a redraw out of order."""
-    setting = runs.image_path(run_id, establisher)
-    if not setting.is_file():
-        raise ImageError(
-            f"scene {scene_id} is drawn from Beat Group establisher {establisher}, whose image is "
-            f"missing. Draw scene {establisher} first with stickman_generate_images and only_missing set."
-        )
-    return setting
+        return (lead,)
+    return ()
 
 
 def draw(

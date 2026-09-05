@@ -1,5 +1,7 @@
 # Reference images buy continuity by making Scene images order-dependent
 
+**Superseded by [ADR-0004](0004-one-reference-picture-per-scene.md) on 2026-09-04.** The probe it was waiting on showed that an attached setting never transfers, so the order-dependence it accepted bought nothing and was removed before any Run used it. The Lead half stands.
+
 The Narrative Format needs a character and a setting to survive across several Scenes, and Meta AI offers no seed, so text alone cannot hold them: a verbatim Visual Bible line holds a records room, and it does not hold one face across forty pictures. We decided to attach reference pictures to the request instead - the Lead Sheet to every Scene marked `lead`, and a Beat Group's Establishing Shot to the Scenes that follow it.
 
 Attaching the Establishing Shot means Scene 14 cannot be drawn until Scene 12 exists. Until now every Scene's image was independent, which is what made `only_missing` resume trivial and made a redraw touch exactly one file.

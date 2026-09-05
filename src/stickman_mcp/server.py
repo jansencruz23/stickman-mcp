@@ -27,7 +27,6 @@ from .runs import RunStore
 from .script import (
     Script,
     ScriptError,
-    group_of,
     image_prompts_changed,
     narration_changed,
     parse_script,
@@ -526,32 +525,18 @@ def stickman_regenerate_image(
     scene = script.scenes[scene_id - 1]
     chosen = redraw_seed(config, scene_id, seed)
     try:
-        destination = redraw_scene(runs, run_id, scene, image_backend(), config, chosen, script)
+        destination = redraw_scene(runs, run_id, scene, image_backend(), config, chosen)
     except ImageError as exc:
         return _error(f"{exc}. The Script keeps the Image Prompt; call stickman_regenerate_image to try again.")
-    payload: dict[str, Any] = {
-        "run_id": run_id,
-        "scene_id": scene_id,
-        "seed": chosen,
-        "image": str(destination),
-        "image_prompt": scene.image_prompt,
-        "script_updated": image_prompt is not None,
-    }
-    group_warning = _group_warning(runs, run_id, script, scene_id)
-    if group_warning:
-        payload["warning"] = group_warning
-    return _ok(payload)
-
-
-def _group_warning(runs: RunStore, run_id: str, script: Script, scene_id: int) -> str | None:
-    """A redrawn establisher leaves its group referencing a setting that no longer exists."""
-    drawn_from_it = group_of(script, scene_id)
-    if not drawn_from_it:
-        return None
-    stale = ", ".join(f"images/{runs.image_path(run_id, member).name}" for member in drawn_from_it)
-    return (
-        f"Scene {scene_id} establishes a Beat Group, so the new setting no longer matches the "
-        f"Scene(s) drawn from it. Delete {stale} and call stickman_generate_images with only_missing set."
+    return _ok(
+        {
+            "run_id": run_id,
+            "scene_id": scene_id,
+            "seed": chosen,
+            "image": str(destination),
+            "image_prompt": scene.image_prompt,
+            "script_updated": image_prompt is not None,
+        }
     )
 
 
