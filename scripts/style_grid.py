@@ -97,25 +97,69 @@ SUBJECTS = {
 }
 
 
+# The anime channel's prefix is a placeholder, and the 2026-09-04 probe showed why it cannot ship:
+# Meta drew good anime every time and never the same anime twice - flat cel, watercolour, painterly
+# and bright generic across ten images. "anime illustration" names no medium. Each candidate below
+# pins the same four things channel one's locked prefix pins: line quality, how it is shaded, the
+# palette, and how the background is treated. Whichever holds across all three subjects gets written
+# into channel-anime.toml with its negative prompt built from what the losers did wrong.
+ANIME_CANDIDATES = {
+    "flat-cel": (
+        "16:9 widescreen landscape frame, much wider than it is tall, flat 2d anime cel animation "
+        "still, clean even black outlines of constant weight, flat blocks of colour with one hard "
+        "edged shadow tone and no soft gradients, bright saturated palette, simple uncluttered "
+        "backgrounds, " + CLOSING
+    ),
+    "soft-cel": (
+        "16:9 widescreen landscape frame, much wider than it is tall, modern television anime still, "
+        "fine clean dark linework, soft cel shading with gentle gradients on skin and hair, warm "
+        "naturalistic palette, detailed but calm backgrounds, " + CLOSING
+    ),
+    "retro-cel": (
+        "16:9 widescreen landscape frame, much wider than it is tall, 1990s hand painted anime cel, "
+        "heavy uneven black ink lines, flat gouache colour with hard shadow shapes, muted slightly "
+        "faded palette, painted backgrounds with visible brushwork, film grain, " + CLOSING
+    ),
+    "painted": (
+        "16:9 widescreen landscape frame, much wider than it is tall, painted anime background art, "
+        "soft brushed edges rather than hard outlines, layered watercolour and gouache washes, "
+        "muted natural palette, deep atmospheric backgrounds, " + CLOSING
+    ),
+}
+
+# What a story channel actually ships: one person close enough to read a face, an interior that has
+# to hold still across a Beat Group, and an exterior with nobody in it. The last one catches a prefix
+# that quietly supplies a character, which is the failure every channel here has hit at least once.
+ANIME_SUBJECTS = {
+    "person": "a young woman standing at a kitchen counter, seen from the waist up, looking down at her hands",
+    "interior": "a small tidy kitchen at dawn, empty, morning light across the counter and a kettle on the hob",
+    "exterior": "an empty suburban street at dusk, parked cars, telephone poles, no people anywhere",
+}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Render the channel style grid.")
     parser.add_argument("--guidance", type=float, help="override image.guidance_scale; sdxl only")
     parser.add_argument("--locked-only", action="store_true", help="draw the locked prefix and no candidates")
     parser.add_argument("--creatures", action="store_true", help="tune channel two: creature clauses and creature subjects")
+    parser.add_argument("--anime", action="store_true", help="tune the anime channel: pin a medium the look can hold")
     options = parser.parse_args()
 
     config = load_channel_config()
     if options.guidance is not None:
         config = replace(config, guidance_scale=options.guidance)
     subjects = CREATURE_SUBJECTS if options.creatures else SUBJECTS
-    if options.creatures:
+    if options.anime:
+        subjects, styles = ANIME_SUBJECTS, dict(ANIME_CANDIDATES)
+    elif options.creatures:
         styles = creature_styles(config.style_prefix)
     else:
         styles = {"current": config.style_prefix}
         if not options.locked_only:
             styles |= CANDIDATES
 
-    output_dir = OUTPUT_ROOT / (f"creatures-{_grid_name(config)}" if options.creatures else _grid_name(config))
+    folder = "anime" if options.anime else (f"creatures-{_grid_name(config)}" if options.creatures else _grid_name(config))
+    output_dir = OUTPUT_ROOT / folder
     output_dir.mkdir(parents=True, exist_ok=True)
     legend = output_dir / "styles.txt"
     legend.write_text("".join(f"{name}: {prefix}\n" for name, prefix in styles.items()), encoding="utf-8")

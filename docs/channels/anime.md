@@ -2,8 +2,8 @@
 
 Config: `channel-anime.toml`. Runs: `projects-anime/`. Not yet created on YouTube.
 
-**Not ready to produce on.** The style prefix and negative prompt in the config are placeholders and
-the probe below has to run first. Everything else here is decided.
+**Ready to produce on.** The style was locked 2026-09-04; what remains before a first upload is a
+YouTube channel, a topic and a first Run.
 
 **Premise.** Stories and scenarios, narrated and acted - "life before AI" is the shape, an ordinary
 person moved through a situation rather than a list of facts about it.
@@ -66,10 +66,25 @@ kept the 16:9 frame - close included, which was the one expected to drift portra
 `shot_high` and `shot_medium` are untested. `shot_over_shoulder` invents a second figure by
 definition, so it belongs only on Scenes that genuinely have two people.
 
-## Still open: the style is not pinned
+## The style, locked 2026-09-04
 
-The look varied across the ten images - flat cel, watercolour, painterly, bright generic anime -
-because `"anime illustration"` names no medium. Channel one holds its look with "bold uneven hand
-inked black outlines"; this channel needs the equivalent, and it needs its own probe day to find it.
-Until then the prefix and negative prompt in `channel-anime.toml` stay placeholders and no Run should
-start here.
+`flat-cel`, from a four candidate grid in `tuning/style-grid/anime`: flat 2d anime cel, clean even
+black outlines of constant weight, one hard edged shadow tone and no gradients, bright saturated
+palette, simple uncluttered backgrounds.
+
+It won on consistency rather than beauty. `retro-cel` and `painted` were both better looking and
+both drifted into brushwork and washes; `soft-cel` drifted into gradients. `flat-cel` drew a face,
+an interior and an empty exterior in the same treatment, and it left the empty street empty - the
+subject that catches a prefix quietly supplying a character.
+
+The negative prompt is built from what the losers did, not copied from the stickman channels, whose
+list bans "clean vector art" and "smooth even line weight" - a description of this look.
+
+## Before the first upload
+
+- Create the channel: handle, avatar, banner.
+- Pick the first topic and check it against YouTube search first, the way the dumbest-deaths topic
+  was on 2026-08-26.
+- First Run: audition the Lead, then a narrative Script - cold open, Beat Groups, time marker cards,
+  no outro. A forty Scene story is two to three days of image allowance.
+- Thumbnails use the `caricature` style in `scripts/thumbnails.py`, same as the stickman channels.

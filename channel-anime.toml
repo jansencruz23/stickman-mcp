@@ -13,16 +13,21 @@ projects_dir = "projects-anime"
 music_dir = "music"
 
 [style]
-# STILL A PLACEHOLDER, and now known to be too loose. The 2026-09-04 probe drew good anime every
-# time but not the same anime: flat cel on one image, watercolour on the next, bright generic
-# anime on a third. "anime illustration" names no medium, so it cannot hold a channel look the way
-# channel one's "bold uneven hand inked black outlines" does. Pinning it needs its own probe day.
-# The aspect clause is carried over because it is measured: Meta takes no size argument and answers
-# in words, and buried at the end the clause was ignored on 18 of 25 Scenes, so it leads and closes.
-prefix = "16:9 widescreen landscape frame, much wider than it is tall, anime illustration, wide 16:9 landscape composition,"
-# PLACEHOLDER. Deliberately short: the stickman channels' list bans the anime look itself. Rebuild
-# this from what the probe actually returns, not from what the other two channels ban.
-negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signature, blurry, extra limbs, portrait orientation, square image, tall narrow frame"
+# Locked 2026-09-04 from the four candidate anime grid in tuning/style-grid/anime. "flat-cel" won
+# on the only thing that matters for a channel: it drew a face, an interior and an empty exterior in
+# the same treatment, and left the empty street empty. The three it beat all drifted - "soft-cel"
+# toward gradients, "retro-cel" and "painted" into brushwork and washes, which is the same trap the
+# first probe fell into when "anime illustration" named no medium at all.
+# It pins the same four things channel one's prefix pins: line quality, how it is shaded, the
+# palette, and how backgrounds are treated. Drop any one and the look stops holding.
+# The aspect clause leads and closes it, measured on channel one: buried at the end it was ignored
+# on 18 of 25 Scenes, and Meta takes no size parameter so words are the only control.
+prefix = "16:9 widescreen landscape frame, much wider than it is tall, flat 2d anime cel animation still, clean even black outlines of constant weight, flat blocks of colour with one hard edged shadow tone and no soft gradients, bright saturated palette, simple uncluttered backgrounds, wide 16:9 landscape composition,"
+# Built from what the losing candidates actually did, not copied from the stickman channels - their
+# list bans "clean vector art" and "smooth even line weight", which describe this look. Everything
+# here is a drift observed in the grid: brushwork and washes from the painted candidates, gradients
+# from soft-cel, grain and fade from retro-cel.
+negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signature, blurry, extra limbs, portrait orientation, square image, tall narrow frame, painterly, brush strokes, visible brushwork, watercolour, gouache, oil painting, canvas texture, paper texture, film grain, soft gradients, airbrushed shading, muted faded colours, sketchy uneven lines, pencil sketch"
 
 # Same opt-in rule as every channel: a clause rides on the Scenes that need it, never channel-wide.
 # The shot grammar is shared with the stickman channels, so a Scene reads the same on any of them.
