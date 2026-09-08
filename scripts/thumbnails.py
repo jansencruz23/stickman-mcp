@@ -32,7 +32,7 @@ from stickman_mcp.config import load_channel_config  # noqa: E402
 from stickman_mcp.illustration import TEXT_BANS, backend_for, draw  # noqa: E402
 from stickman_mcp.images import ImageError  # noqa: E402
 
-# Measured 2026-09-04 against the two uploaded sets, which run 0-1.5 per cent click-through:
+# Measured 2026-09-08 against the two uploaded sets, which run 0-1.5 per cent click-through:
 # both wasted a third or more of the frame on empty background, one stacked four words and cut the
 # last off, and neither used a big numeral - the one thing the card Scenes prove Meta gets right.
 # So every candidate here fills the frame, carries ONE word or ONE number and never both, and puts

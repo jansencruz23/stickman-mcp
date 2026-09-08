@@ -97,7 +97,7 @@ SUBJECTS = {
 }
 
 
-# The anime channel's prefix is a placeholder, and the 2026-09-04 probe showed why it cannot ship:
+# The anime channel's prefix is a placeholder, and the 2026-09-08 probe showed why it cannot ship:
 # Meta drew good anime every time and never the same anime twice - flat cel, watercolour, painterly
 # and bright generic across ten images. "anime illustration" names no medium. Each candidate below
 # pins the same four things channel one's locked prefix pins: line quality, how it is shaded, the

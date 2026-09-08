@@ -2,7 +2,7 @@
 
 Config: `channel-anime.toml`. Runs: `projects-anime/`. Not yet created on YouTube.
 
-**Ready to produce on.** The style was locked 2026-09-04; what remains before a first upload is a
+**Ready to produce on.** The style was locked 2026-09-08; what remains before a first upload is a
 YouTube channel, a topic and a first Run.
 
 **Premise.** Stories and scenarios, narrated and acted - "life before AI" is the shape, an ordinary
@@ -45,7 +45,7 @@ expression row so Meta has references for them.
 **Quota.** One Run a day on the shared Meta account, roughly twenty one images. Four audition
 candidates plus a forty-Scene story is a two to three day image job.
 
-## What the probe found (2026-09-04, 10 images, `tuning/anime-probe/`)
+## What the probe found (2026-09-08, 10 images, `tuning/anime-probe/`)
 
 **Meta draws anime well.** The character sheet came back with four angles, a three-expression row
 and a correct 16:9 frame, off nothing but a placeholder prefix.
@@ -66,7 +66,7 @@ kept the 16:9 frame - close included, which was the one expected to drift portra
 `shot_high` and `shot_medium` are untested. `shot_over_shoulder` invents a second figure by
 definition, so it belongs only on Scenes that genuinely have two people.
 
-## The style, locked 2026-09-04
+## The style, locked 2026-09-08
 
 `flat-cel`, from a four candidate grid in `tuning/style-grid/anime`: flat 2d anime cel, clean even
 black outlines of constant weight, one hard edged shadow tone and no gradients, bright saturated

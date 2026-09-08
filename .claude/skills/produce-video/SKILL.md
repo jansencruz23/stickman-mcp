@@ -115,7 +115,7 @@ one place the channel's face is established, and it must not drift.
 ### The ending
 
 **No channel runs an outro.** A video ends on its last Scene - the last ranked item, or the last
-beat of the story. Dropped across all three channels on 2026-09-04: a fixed sign-off written once
+beat of the story. Dropped across all three channels on 2026-09-08: a fixed sign-off written once
 and pasted onto every video lands unconnected to what the video was actually about, and reads as
 arriving out of nowhere.
 
@@ -136,7 +136,7 @@ Everything below applies to both.
 Meta declines some prompts, and a refusal is invisible: it answers with words instead of a picture,
 which the backend can only read as a timeout after 180 seconds.
 
-**The line is suffering, not intensity** - narrowed 2026-09-04 by testing it deliberately. Refused: a
+**The line is suffering, not intensity** - narrowed 2026-09-08 by testing it deliberately. Refused: a
 body under a sheet, a man kneeling with his head hanging, a face shouting with veins showing, and a
 two panel before-and-after split. Drawn without complaint: bulging bloodshot eyes, deep hollow eye
 rings, sweat, drool, wild hair, a manic grin, and a dinosaur's open jaws a foot from a man's face.

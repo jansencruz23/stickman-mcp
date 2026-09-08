@@ -9,7 +9,7 @@ This supersedes [ADR-0003](0003-reference-images-make-scenes-order-dependent.md)
 order-dependent Scene images in exchange for a Beat Group's Establishing Shot holding its group's
 setting. The probe showed that trade does not exist, because the setting never transfers.
 
-## What the probe found (2026-09-04, `tuning/anime-probe/`, 10 images)
+## What the probe found (2026-09-08, `tuning/anime-probe/`, 10 images)
 
 - **A character reference works, and works well.** The sheet attached to a new prompt produced a new
   scene with the same face, the same hair, and an incidental costume detail carried through.

@@ -30,7 +30,7 @@ negative_prompt = "photorealistic, 3d render, photograph, text, watermark, signa
 [style.clauses]
 people = "any people are drawn as stick figures with big round slightly lopsided cream circle heads, exactly two small solid black dots for eyes and one short flat black line above each eye, plain thin black stick arms and legs drawn as unbroken slightly wobbly lines,"
 
-# Shot grammar, added 2026-09-04. A Scene names one, and only one, to say where the camera is.
+# Shot grammar, added 2026-09-08. A Scene names one, and only one, to say where the camera is.
 # The complaint they answer: Scenes that are each a single floating object read as random rather
 # than directed. UNPROVEN until the style probe runs - a composed layout is the recorded way to
 # lose the prefix entirely (a 2x2 panel grid came back watercolour, 2026-08-31), so these stay

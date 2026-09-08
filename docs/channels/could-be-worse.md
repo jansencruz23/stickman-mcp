@@ -21,7 +21,7 @@ move and the viewer cannot tell the cut happened.
 It earns its place twice: richer than a flat background, and it is the literal claim the intro
 makes, that these stories come out of the written record.
 
-**No outro.** The video ends on its last ranked item. Removed 2026-09-04: the fixed turn and ask
+**No outro.** The video ends on its last ranked item. Removed 2026-09-08: the fixed turn and ask
 landed unconnected to whatever the video had just been about, so they read as arriving out of
 nowhere. The countdown's last item is its own ending.
 

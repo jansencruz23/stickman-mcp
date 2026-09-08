@@ -30,7 +30,7 @@ hallucination = "the frame is warped by exhaustion, the horizon tilted well off 
 # Every card Scene carries it, or eleven cards invent eleven different backgrounds.
 plain_card = "the whole frame behind the lettering is one flat empty background colour, no ground, no grass, no plants, no flowers, no bushes, no hills, no sky, no clouds, no horizon line, no scenery of any kind,"
 
-# Shot grammar, added 2026-09-04. A Scene names one, and only one, to say where the camera is.
+# Shot grammar, added 2026-09-08. A Scene names one, and only one, to say where the camera is.
 # The complaint they answer: Scenes that are each a single floating object read as random rather
 # than directed. UNPROVEN until the style probe runs - a composed layout is the recorded way to
 # lose the prefix entirely (a 2x2 panel grid came back watercolour, 2026-08-31), so these stay

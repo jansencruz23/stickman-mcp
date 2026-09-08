@@ -18,7 +18,7 @@ specimen jars and animal skulls, held as a Visual Bible entry. A topic off that 
 set rather than borrowing this one.
 
 **No outro.** The video ends on its last ranked item, same as channel one and for the same reason,
-decided 2026-09-04 before the sign-off was ever used. The lines drafted on 2026-09-01 - "None of
+decided 2026-09-08 before the sign-off was ever used. The lines drafted on 2026-09-01 - "None of
 this was built for you..." - are dropped rather than applied, so the three older Runs no longer need
 re-cutting to match. The sleep Run keeps its outro until it is re-rendered; nothing is republished
 for this alone.
