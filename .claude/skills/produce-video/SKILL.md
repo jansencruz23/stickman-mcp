@@ -146,6 +146,17 @@ unconsciousness and a hand at a throat still risk it.
 Where a Scene does need pain, let the picture hold the place instead of the person - the empty
 ground, the heat shimmer, the still water - or show the figure upright and seen from behind.
 
+**Name the feeling, or Meta picks one.** A face with no stated expression comes back pleasant. A
+Scene whose narration is "the most expensive morning of her life" drew a woman smiling on a sunny
+drive, because the prompt said only where she was sitting. Every Scene showing a face states what
+that face is doing.
+
+**A prompt must be posable by one body.** Asking for a phone at her ear, a pen in her hand and a
+hand being written on is three hands, and Meta draws the third arm rather than drop any part of it.
+`extra limbs` in the negative prompt does not save this - it lost to the instruction twice, and
+describing the pose more precisely ("wedged at the shoulder, both hands free") failed a third time.
+The fix is always to ask for less: cut one element until two hands suffice.
+
 Describe subject, action and composition in plain nouns and verbs — what is in the frame and what
 it is doing. Content only: the server prepends the channel Style Prefix and applies the negative
 prompt to every image, which is what makes all frames of all videos one look. Style words in your

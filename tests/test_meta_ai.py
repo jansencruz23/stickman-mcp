@@ -285,3 +285,42 @@ def test_both_backends_satisfy_the_one_contract_including_references():
         taken = inspect.signature(backend.generate).parameters
         assert list(taken) == ["prompt", "negative_prompt", "seed", "destination", "references"]
         assert taken["references"].default == ()
+
+
+def test_meta_s_own_server_error_is_retried_once_on_a_fresh_thread(tmp_path):
+    """It struck twice in one 50 Scene batch, and each strike cost every Scene behind it."""
+    chats: list[FakeMetaChat] = []
+
+    def open_chat() -> FakeMetaChat:
+        chat = FakeMetaChat(chats)
+        if not chats[:-1]:  # only the first thread faults, the way Meta's own outage did
+            chat.raises = ImageError(
+                "Meta AI sent no picture within 180s. Its last words were: "
+                "Sorry, it seems I had some problems on my side. Please try again."
+            )
+        return chat
+
+    backend = MetaAIBackend(open_chat, delay_seconds=0.0, sleep=lambda _: None)
+
+    backend.generate("a kitchen", "blurry", 1, tmp_path / "out.png")
+
+    assert (tmp_path / "out.png").is_file(), "a transient must not lose the Scene"
+    assert len(chats) == 2, "the retry needs a fresh thread; the faulted one is not reused"
+    assert chats[0].closed, "the faulted thread is shut before the retry"
+
+
+def test_a_refusal_is_not_retried_because_asking_again_changes_nothing(tmp_path):
+    chats: list[FakeMetaChat] = []
+    backend = MetaAIBackend(lambda: FakeMetaChat(chats), delay_seconds=0.0, sleep=lambda _: None)
+    chats_seen = []
+
+    def open_refusing() -> FakeMetaChat:
+        chat = FakeMetaChat(chats_seen)
+        chat.raises = ImageError("Meta is rate limiting the account.")
+        return chat
+
+    backend = MetaAIBackend(open_refusing, delay_seconds=0.0, sleep=lambda _: None)
+    with pytest.raises(ImageError, match="rate limiting"):
+        backend.generate("a kitchen", "blurry", 1, tmp_path / "out.png")
+
+    assert len(chats_seen) == 1, "only a transient earns a second attempt"

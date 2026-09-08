@@ -43,6 +43,11 @@ BLOCKERS: tuple[tuple[str, str], ...] = (
     ("try again later", RATE_LIMIT),
 )
 
+# Meta's own words for a fault at its end, as opposed to a refusal of what was asked. It struck
+# twice inside one 50 Scene batch on 2026-09-08, and without a retry each strike cost every Scene
+# behind it. Asking again works; asking again after a refusal would not.
+TRANSIENT = ("problems on my side",)
+
 LOGIN_SIGNS = ("log into facebook", "log in to facebook", "continue with facebook", "create new account")
 
 
@@ -80,17 +85,28 @@ class MetaAIBackend:
         references: Sequence[Path] = (),
     ) -> None:
         """The seed is accepted and unused: Meta offers no way to ask for the same pixels twice."""
-        self._pace()  # waited out before the window appears, so an open browser is always a busy one
-        chat = self._opened()
         asked = compose_request(prompt, negative_prompt, references)
-        write_png(destination, chat.request_image(asked, references))
+        try:
+            self._ask(asked, references, destination)
+        except ImageError as exc:
+            if not any(phrase in str(exc).lower() for phrase in TRANSIENT):
+                raise
+            self._shut()  # the thread that faulted is not reused; the retry starts a clean one
+            self._ask(asked, references, destination)
+
+    def _ask(self, asked: str, references: Sequence[Path], destination: Path) -> None:
+        self._pace()  # waited out before the window appears, so an open browser is always a busy one
+        write_png(destination, self._opened().request_image(asked, references))
+
+    def _shut(self) -> None:
+        chat, self._chat = self._chat, None
+        if chat is not None:
+            with suppress(Exception):
+                chat.close()
 
     def close(self) -> None:
         """Called when a batch or a redraw ends, which is what keeps a Run to exactly one browser."""
-        chat, self._chat = self._chat, None
-        if chat is not None:
-            with suppress(Exception):  # teardown must never replace the failure that caused it
-                chat.close()
+        self._shut()  # teardown must never replace the failure that caused it
 
     def _opened(self) -> MetaChat:
         if self._chat is None:
