@@ -61,6 +61,26 @@ NEGATIVES: dict[str, str] = {
 }
 
 CANDIDATES: dict[str, dict[str, str]] = {
+    # The number in the title is the hook, so it is the number on the thumbnail. Faces stay wrecked
+    # or astonished, never in pain: that is where Meta's refusal actually sits.
+    "debt-caricature": {
+        "eight-four": (
+            "an extreme close up of one woman's face filling the left half of the frame, eyes wide "
+            "and staring at the viewer, dark rings under them, mouth slightly open, and one enormous "
+            "bold red 8400 dollar figure filling the entire right half of the frame, a dim kitchen "
+            "behind her"
+        ),
+        "card-cut": (
+            "an extreme close up of one woman's face filling the left third of the frame, eyes wide "
+            "and staring, and an enormous credit card held up beside her face filling the rest of "
+            "the frame, the card cracked clean across the middle, a dim kitchen behind her"
+        ),
+        "six-hundred": (
+            "an extreme close up of one woman's face filling the left half of the frame, eyes wide "
+            "and staring at the viewer, and the figure 600 in enormous bold red numerals filling the "
+            "right half of the frame with a small red arrow beneath it pointing up to 8400"
+        ),
+    },
     "prehistoric-caricature": {
         "seconds": (
             "an extreme close up of one prehistoric man's face filling the left half of the frame, "
