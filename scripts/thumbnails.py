@@ -75,6 +75,20 @@ CANDIDATES: dict[str, dict[str, str]] = {
             "and staring, and an enormous credit card held up beside her face filling the rest of "
             "the frame, the card cracked clean across the middle, a dim kitchen behind her"
         ),
+        # The cracked card names the topic in a way a bare number cannot. What has to go is the
+        # invented card number and cardholder name: fabricated, but they read as a working card.
+        "card-blank": (
+            "an extreme close up of one woman's face filling the left third of the frame, eyes wide "
+            "and staring, and an enormous plain blank credit card held up beside her face filling "
+            "the rest of the frame, cracked clean across the middle, the card completely blank with "
+            "no numbers, no name and no writing of any kind on it, a dim kitchen behind her"
+        ),
+        "card-figure": (
+            "an extreme close up of one woman's face filling the left third of the frame, eyes wide "
+            "and staring, and an enormous credit card held up beside her face filling the rest of "
+            "the frame, cracked clean across the middle, with only the figure $8400 embossed large "
+            "across the card and no other numbers or names anywhere on it, a dim kitchen behind her"
+        ),
         "six-hundred": (
             "an extreme close up of one woman's face filling the left half of the frame, eyes wide "
             "and staring at the viewer, and the figure 600 in enormous bold red numerals filling the "

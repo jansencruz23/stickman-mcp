@@ -163,6 +163,19 @@ prompt to every image, which is what makes all frames of all videos one look. St
 prompt ("minimalist", "line art", "black and white", "flat vector") fight that prefix, and are the
 one reliable way to break the channel's identity.
 
+### Thumbnails
+
+A thumbnail carries **one** number or word, never two: asked for 600 with an arrow to 8400, Meta
+drew 8400 twice, overlapping, with the arrow pointing at nothing.
+
+Better than a number beside a face is **the number written on the object the video is about** - the
+figure embossed across a cracked credit card beat the same figure floating next to it, because one
+shape carries both the hook and the subject. It also avoids the two-number layout Meta cannot do.
+
+Never let it invent a card number, an account number or a name on a document. Meta will produce a
+plausible looking one unasked, which reads as real and is not worth the question it invites. Say
+the object is blank, or give it only the figure you want.
+
 ### Card Scenes
 
 A countdown or chapter screen is a Scene with `"card": true` alongside its `id`, `narration` and
