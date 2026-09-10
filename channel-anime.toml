@@ -46,7 +46,7 @@ plain_card = "the whole frame behind the lettering is one flat empty background 
 
 [voice]
 # One production voice across all three channels, so a new channel needs no second audition.
-name = "am_puck"
+name = "am_santa"
 speed = 1.15
 
 [render]

@@ -45,7 +45,7 @@ shot_over_shoulder = "seen from behind one figure, past their shoulder, at what 
 
 [voice]
 # Same narrator as channel one on purpose: one production voice, two channels, no second audition.
-name = "am_puck"
+name = "am_santa"
 # 1.0 to 1.15 on 2026-09-01 by request, matching channel one. Kokoro's scale is not linear: this
 # measures about 1.10x faster. Narration is also levelled up 1.5x after synthesis, out of process.
 speed = 1.15

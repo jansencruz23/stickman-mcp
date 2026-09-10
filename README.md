@@ -417,8 +417,11 @@ locked identity:
   At 0.4 the gap between one Scene's last word and the next read as dead air; once Scenes were cut
   to 4-7 seconds even 0.2 landed as a stumble mid-sentence. Kokoro leaves a breath at each clip
   edge already, so the cuts still have air in them at zero.
-- **Voice** — `am_puck` at `voice.speed = 1.0`, raised to 1.15 on 2026-08-16 and returned to 1.0
-  on 2026-08-23 once Scenes were cut to 3 seconds and the faster read had nowhere to breathe.
+- **Voice** — `am_santa` at `voice.speed = 1.15`. Speed went 1.0 to 1.15 on 2026-08-16, back to 1.0
+  on 2026-08-23 once Scenes were cut to 3 seconds and the faster read had nowhere to breathe, and
+  to 1.15 again on 2026-08-31 with Scenes at 7-10 seconds. The voice was `am_puck` from the
+  eight candidate audition on 2026-08-16 until 2026-09-09, when the audition was widened to
+  Kokoro's whole English roster and `am_santa` was picked for a warmer read.
 
 `tests/test_channel_config.py` asserts these exact values, so changing them is a deliberate
 channel decision that updates a test, not a passing edit.

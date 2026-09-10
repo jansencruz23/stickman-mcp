@@ -12,21 +12,45 @@ from stickman_mcp.tts import KokoroEngine, clip_duration_seconds
 
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "tuning" / "voice-audition"
 
+# Written to swing: a flat opener, a turn, and a line that has to land, so a candidate is judged
+# on delivery rather than timbre.
 SAMPLE_LINE = (
-    "Compound interest is the reason a small saving grows into a large one. "
-    "Leave the money alone, and the interest starts earning interest of its own. "
-    "Give it enough time, and the curve stops climbing and starts to bend."
+    "He put in six hundred dollars and forgot about it. No plan, no second thought. "
+    "Eleven years later he opened the account, and stopped. "
+    "Eight thousand four hundred. From money he never missed."
 )
 
+# Kokoro's whole English roster. The 2026-08-16 audition heard eight of these; am_puck won a field
+# that never included the warmer reads. Uncached voices download on first use.
 CANDIDATES = [
-    "af_heart",
+    "af_alloy",
+    "af_aoede",
     "af_bella",
+    "af_heart",
+    "af_jessica",
+    "af_kore",
     "af_nicole",
+    "af_nova",
+    "af_river",
     "af_sarah",
+    "af_sky",
     "am_adam",
+    "am_echo",
+    "am_eric",
+    "am_fenrir",
+    "am_liam",
     "am_michael",
+    "am_onyx",
     "am_puck",
+    "am_santa",
+    "bf_alice",
     "bf_emma",
+    "bf_isabella",
+    "bf_lily",
+    "bm_daniel",
+    "bm_fable",
+    "bm_george",
+    "bm_lewis",
 ]
 
 

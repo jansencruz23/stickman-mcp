@@ -26,7 +26,7 @@ def test_the_shipped_config_carries_the_locked_channel_identity():
     assert config.clauses["people"] == LOCKED_PEOPLE_CLAUSE
     subject_clauses = [name for name in config.clauses if not name.startswith("shot_")]
     assert subject_clauses == ["people"], "only people are stick figures on this channel"
-    assert (config.voice, config.voice_speed) == ("am_puck", 1.15)  # relocked 2026-08-31 by request
+    assert (config.voice, config.voice_speed) == ("am_santa", 1.15)  # am_santa 2026-09-09, a warmer read
     negatives = config.negative_prompt
     assert not any(word in negatives for word in ("color", "colour")), "the locked look is coloured"
     assert "stick figure animals" in negatives, "only people are stick figures"
