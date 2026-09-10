@@ -10,8 +10,9 @@ projects/
 # One-off style/voice tuning outputs
 tuning/
 
-# The Meta AI backend's browser profile: the creator's own logged-in session, never committed
+# The Meta AI backend's browser profiles: the creator's own logged-in sessions, never committed
 browser-profile/
+browser-profile-2/
 
 # User-curated music tracks (keep the folder)
 music/*
@@ -25,3 +26,8 @@ projects-anime/
 
 # Browser MCP console logs
 .playwright-mcp/
+
+# Per Run handoff files channel_run.py reads and rewrites, one Run at a time
+scripts/run-id*.txt
+scripts/script.json
+scripts/metadata.json

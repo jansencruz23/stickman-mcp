@@ -46,7 +46,9 @@ BLOCKERS: tuple[tuple[str, str], ...] = (
 # Meta's own words for a fault at its end, as opposed to a refusal of what was asked. It struck
 # twice inside one 50 Scene batch on 2026-09-08, and without a retry each strike cost every Scene
 # behind it. Asking again works; asking again after a refusal would not.
-TRANSIENT = ("problems on my side",)
+# "something went wrong" is the same fault in Meta's other wording, found on 2026-09-09 when it
+# stopped a 60 Scene batch at Scene 4. It ends "Please try again", which is what it means.
+TRANSIENT = ("problems on my side", "something went wrong")
 
 LOGIN_SIGNS = ("log into facebook", "log in to facebook", "continue with facebook", "create new account")
 
