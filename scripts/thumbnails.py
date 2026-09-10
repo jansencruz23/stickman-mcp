@@ -95,6 +95,36 @@ CANDIDATES: dict[str, dict[str, str]] = {
             "right half of the frame with a small red arrow beneath it pointing up to 8400"
         ),
     },
+    # The bottle and the drill carry the number on the object the video is about, which beat a
+    # number floating beside a face on the debt set. Both label and bottle are stated blank, or
+    # Meta invents a dosage that reads as a real prescription.
+    "medical-caricature": {
+        "ten": (
+            "an extreme close up of one Victorian doctor's face filling the left half of the frame, "
+            "eyes bulging wide and bloodshot, dark hollow rings under them, mouth open in "
+            "astonishment, wild grey side whiskers, and one enormous bold red numeral 10 filling the "
+            "entire right half of the frame, a dim surgery behind him"
+        ),
+        "bottle": (
+            "an extreme close up of one Victorian doctor's face filling the left third of the frame, "
+            "eyes bulging wide and bloodshot, mouth open in astonishment, and an enormous brown "
+            "glass medicine bottle held up beside his face filling the rest of the frame, with only "
+            "an enormous red numeral 10 on its label and no other words, numbers or writing of any "
+            "kind anywhere on the bottle, a dim surgery behind him"
+        ),
+        "cure": (
+            "an extreme close up of one Victorian doctor's face filling the left half of the frame, "
+            "eyes bulging wide and bloodshot, dark hollow rings under them, a manic grin, wild grey "
+            "side whiskers, and the single word CURE in enormous bold red capitals filling the "
+            "entire right half of the frame, a dim surgery behind him"
+        ),
+        "drill": (
+            "an extreme close up of one Victorian doctor's face filling the left third of the frame, "
+            "eyes bulging wide and bloodshot, a manic grin, wild grey side whiskers, and an enormous "
+            "hand cranked skull drill with a circular metal bit held up beside his face filling the "
+            "rest of the frame, a dim surgery behind him"
+        ),
+    },
     "prehistoric-caricature": {
         "seconds": (
             "an extreme close up of one prehistoric man's face filling the left half of the frame, "
